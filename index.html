@@ -88,6 +88,14 @@
       .icon-btn:hover {
         border-color: var(--acid);
       }
+      #fps-toggle[aria-pressed="true"] {
+        color: var(--acid);
+        border-color: var(--acid);
+      }
+      #fps-display {
+        color: var(--acid);
+        font-variant-numeric: tabular-nums;
+      }
       main {
         margin: auto;
       }
@@ -1474,6 +1482,15 @@
           aria-pressed="true"
         >
           FX ON</button
+        ><button
+          class="icon-btn"
+          id="fps-toggle"
+          aria-label="Show FPS"
+          aria-pressed="false"
+          aria-controls="fps-display"
+          title="Toggle FPS display"
+        >
+          FPS</button
         ><button class="icon-btn" id="pause-btn" aria-label="Pause or resume">
           Ⅱ</button
         ><button class="icon-btn" id="fullscreen" aria-label="Fullscreen">
@@ -1533,7 +1550,12 @@
         <section class="table-column">
           <div class="table-wrap">
             <div class="table-top">
-              <span>BB / CUSTOM BUILT</span><span>● STREET CRED: MAX</span>
+              <span
+                ><span id="table-label">BB / CUSTOM BUILT</span
+                ><output id="fps-display" aria-live="off" hidden
+                  >FPS —</output
+                ></span
+              ><span>● STREET CRED: MAX</span>
             </div>
             <canvas
               id="table"
@@ -1970,6 +1992,49 @@
           best = Number(localStorage.getItem("badboy-best")) || 0;
         } catch {}
         $("best").textContent = best.toLocaleString();
+        let fpsVisible = false,
+          fpsStart = null,
+          fpsFrames = 0;
+        try {
+          fpsVisible = localStorage.getItem("badboy-fps") === "true";
+        } catch {}
+        function syncFps() {
+          $("fps-toggle").setAttribute("aria-pressed", String(fpsVisible));
+          $("fps-toggle").setAttribute(
+            "aria-label",
+            fpsVisible ? "Hide FPS" : "Show FPS",
+          );
+          $("fps-display").hidden = !fpsVisible;
+          $("table-label").hidden = fpsVisible;
+          fpsStart = null;
+          fpsFrames = 0;
+          $("fps-display").textContent = "FPS —";
+        }
+        $("fps-toggle").onclick = () => {
+          fpsVisible = !fpsVisible;
+          try {
+            localStorage.setItem("badboy-fps", String(fpsVisible));
+          } catch {}
+          syncFps();
+        };
+        syncFps();
+        document.addEventListener("visibilitychange", syncFps);
+        // Measure rendered frames using real RAF time, independently of physics ticks.
+        function updateFps(now) {
+          if (!fpsVisible || document.hidden) return;
+          if (fpsStart === null) {
+            fpsStart = now;
+            return;
+          }
+          fpsFrames++;
+          const elapsed = now - fpsStart;
+          if (elapsed >= 500) {
+            $("fps-display").textContent =
+              `FPS ${Math.round((fpsFrames * 1000) / elapsed)}`;
+            fpsStart = now;
+            fpsFrames = 0;
+          }
+        }
         const state = {
             mode: "ready",
             score: 0,
@@ -3200,6 +3265,7 @@
           }
           last = now;
           render();
+          updateFps(now);
           requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
@@ -3223,6 +3289,7 @@
           return {
             coordinates: "origin top-left, x right, y down; table 520x820",
             mode: state.mode,
+            fpsVisible,
             score: state.score,
             best,
             multiplier: state.mult,

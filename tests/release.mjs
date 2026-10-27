@@ -85,22 +85,66 @@ for (const servedRoot of [root, release]) {
   );
   captures.push(shots);
 }
-for (let i = 0; i < captures[0].length; i++) {
-  if (!captures[0][i].equals(captures[1][i])) {
-    fs.writeFileSync(
-      path.join(root, `output/release-compare-${i}-source.png`),
-      captures[0][i],
-    );
-    fs.writeFileSync(
-      path.join(root, `output/release-compare-${i}-min.png`),
-      captures[1][i],
-    );
+// Browser compositing can round a few edge pixels by one RGB level. Keep state
+// byte-exact and allow only that bounded rounding in decoded screenshots.
+await withGameBrowser(async ({ newContext }) => {
+  const context = await newContext();
+  const page = await context.newPage();
+  for (let i = 0; i < captures[0].length; i++) {
+    let matches = captures[0][i].equals(captures[1][i]);
+    if (!matches && i % 3 !== 2) {
+      matches = await page.evaluate(
+        async (images) => {
+          const pixels = await Promise.all(
+            images.map(async (base64) => {
+              const image = new Image();
+              image.src = `data:image/png;base64,${base64}`;
+              await image.decode();
+              const canvas = document.createElement("canvas");
+              canvas.width = image.width;
+              canvas.height = image.height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(image, 0, 0);
+              return {
+                width: canvas.width,
+                height: canvas.height,
+                data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+              };
+            }),
+          );
+          const [a, b] = pixels;
+          if (a.width !== b.width || a.height !== b.height) return false;
+          let changedPixels = 0;
+          for (let offset = 0; offset < a.data.length; offset += 4) {
+            let changed = false;
+            for (let channel = 0; channel < 4; channel++) {
+              const delta = Math.abs(
+                a.data[offset + channel] - b.data[offset + channel],
+              );
+              if (delta > 1) return false;
+              changed ||= delta > 0;
+            }
+            if (changed && ++changedPixels > 10) return false;
+          }
+          return true;
+        },
+        [captures[0][i].toString("base64"), captures[1][i].toString("base64")],
+      );
+    }
+    if (!captures[0][i].equals(captures[1][i])) {
+      fs.writeFileSync(
+        path.join(root, `output/release-compare-${i}-source.png`),
+        captures[0][i],
+      );
+      fs.writeFileSync(
+        path.join(root, `output/release-compare-${i}-min.png`),
+        captures[1][i],
+      );
+    }
+    assert.ok(matches, `Source/release capture ${i} differs`);
   }
-  assert.ok(
-    captures[0][i].equals(captures[1][i]),
-    `Source/release capture ${i} differs`,
-  );
-}
+  await context.close();
+});
 console.log(
   "Reproducibility, file allowlist, source/release UI and state parity PASS",
 );

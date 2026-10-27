@@ -34,6 +34,8 @@ Anschließend **[http://127.0.0.1:8090](http://127.0.0.1:8090)** öffnen. Für d
 
 Der Ghettoblaster schaltet zwischen **Gesang → Instrumental → Aus**. Seine Lautsprecher pulsieren anhand des tatsächlichen Abspielzeitpunkts. **FX ON/OFF** steuert die synthetischen Spieleffekte unabhängig von der Musik. Audio startet nach einer Benutzeraktion. Android kann Vollbild mit der Zurück-Geste bzw. Zurück-Taste beenden; am Desktop funktioniert auch Escape.
 
+Die **FPS**-Taste oben schaltet die Bildratenanzeige am oberen Tischrand ein oder aus. Sie ist standardmäßig aus; die Auswahl wird lokal gespeichert. Der Wert wird alle 0,5 Sekunden aus den tatsächlich gerenderten Frames berechnet.
+
 ## Spielregeln
 
 - Drei Kugeln pro Partie. Die Startphase schützt acht Sekunden lang vor einem verlorenen Ball.

@@ -29,7 +29,7 @@ assets/lucky-seven-theme.mp3
 
 Den Inhalt direkt im Spielverzeichnis des Webservers bereitstellen, beispielsweise `/apps/flipper/`. Der Ordnername `release` gehört nicht in die öffentliche URL. `output/release-report.json` enthält Größen und SHA-256-Hashes von Quellen und Auslieferungsdateien. `release/`, `output/` und `ftp.txt` sind von Git ausgeschlossen. Unbekannte Dateien im Release-Ordner lassen den Build abbrechen; sie werden weder gelöscht noch hochgeladen.
 
-Die Release-Prüfung vergleicht reproduzierbare Builds, Dateiliste und Hashes, außerdem pixelgenaue Start-/Spielansichten und Spielzustände mit der Quelle in drei Ausrichtungen. Anschließend laufen Gameplay, alle 22 Drain-Szenarien, neun Viewportgrößen, Offline-Audio sowie Installation und bestätigte Worker-Updates gegen die minimierten Dateien.
+Die Release-Prüfung vergleicht reproduzierbare Builds, Dateiliste und Hashes, außerdem Start-/Spielansichten und Spielzustände mit der Quelle in drei Ausrichtungen. Der Bildvergleich toleriert Rundungen von höchstens einer Farbstufe an maximal zehn Pixeln pro Ansicht; Spielzustände müssen exakt übereinstimmen. Anschließend laufen Gameplay, alle 22 Drain-Szenarien, neun Viewportgrößen, Offline-Audio sowie Installation und bestätigte Worker-Updates gegen die minimierten Dateien.
 
 Die Medien bleiben unverändert; sie machen fast die gesamte Paketgröße aus. Die Minifizierung reduziert den Code, ohne die Bild- oder Audioqualität zu verändern.
 
