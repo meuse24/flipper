@@ -1,4 +1,59 @@
-import fs from 'node:fs';
-import {chromium} from 'playwright';
-fs.mkdirSync('output',{recursive:true});
-const b=await chromium.launch({headless:true}),c=await b.newContext(),p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:8090');await p.evaluate(()=>navigator.serviceWorker.ready);await p.reload();await c.setOffline(true);await p.reload();const range=await p.evaluate(async()=>{const r=await fetch('assets/lucky-seven-song.mp3',{headers:{Range:'bytes=0-127'}});return {status:r.status,len:(await r.arrayBuffer()).byteLength,type:r.headers.get('Content-Type'),range:r.headers.get('Content-Range')}});if(range.status!==206||range.len!==128)throw Error('offline audio range '+JSON.stringify(range));await p.click('.menu-blaster');await p.waitForFunction(()=>JSON.parse(render_game_to_text()).music.time>.3);const vocal=JSON.parse(await p.evaluate(()=>render_game_to_text()));await p.click('.menu-blaster');await p.waitForFunction(()=>{const s=JSON.parse(render_game_to_text());return s.music.mode===2&&s.music.time>.3});const instrumental=JSON.parse(await p.evaluate(()=>render_game_to_text()));await p.click('.menu-blaster');const off=JSON.parse(await p.evaluate(()=>render_game_to_text()));if(off.music.mode!==0||off.music.playing)throw Error('OFF failed');console.log('OFFLINE VOCAL / INSTRUMENTAL / OFF / RANGE PASS',JSON.stringify({range,vocal:vocal.music,instrumental:instrumental.music,off:off.music,errors}));await b.close();if(errors.length)process.exit(1)
+import assert from "node:assert/strict";
+import { withGameBrowser, openGame, readState } from "./helpers.mjs";
+
+await withGameBrowser(
+  async ({ newContext, origin }) => {
+    const context = await newContext();
+    const page = await openGame(context, origin, { manual: false });
+    assert.equal(
+      await page.evaluate(() => window.__pinballTest),
+      undefined,
+      "No scenario adapter in normal play",
+    );
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.reload();
+    await context.setOffline(true);
+    await page.reload();
+    const ranges = await page.evaluate(async () => {
+      const file = "assets/lucky-seven-song.mp3";
+      const result = [];
+      for (const range of ["bytes=0-127", "bytes=-128", "bytes=999999999-"]) {
+        const response = await fetch(file, { headers: { Range: range } });
+        result.push({
+          status: response.status,
+          bytes: (await response.arrayBuffer()).byteLength,
+          type: response.headers.get("Content-Type"),
+        });
+      }
+      return result;
+    });
+    assert.equal(ranges[0].status, 206);
+    assert.equal(ranges[0].bytes, 128);
+    assert.equal(ranges[0].type, "audio/mpeg");
+    assert.equal(ranges[1].status, 206);
+    assert.equal(ranges[1].bytes, 128);
+    assert.equal(ranges[2].status, 416);
+    await page.click(".menu-blaster");
+    await page.waitForFunction(
+      () => JSON.parse(render_game_to_text()).music.time > 0.3,
+    );
+    assert.equal((await readState(page)).music.playing, true);
+    await page.click(".menu-blaster");
+    await page.waitForFunction(() => {
+      const s = JSON.parse(render_game_to_text());
+      return s.music.mode === 2 && s.music.time > 0.3;
+    });
+    assert.equal((await readState(page)).music.playing, true);
+    await page.click(".menu-blaster");
+    const off = await readState(page);
+    assert.equal(off.music.mode, 0);
+    assert.equal(off.music.playing, false);
+    console.log("Offline vocal, instrumental, OFF and audio byte ranges PASS");
+  },
+  {
+    // The unsatisfiable-range assertion deliberately produces a Chromium resource error.
+    expectedConsoleErrors: [
+      /^Failed to load resource: the server responded with a status of 416/,
+    ],
+  },
+);

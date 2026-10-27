@@ -8,7 +8,7 @@ Ein Pinball-Arcade-Spiel für Desktop, Tablet und Handy: eigene 2D-Physik, Multi
 
 ## Starten
 
-`index.html` direkt im Browser öffnen. Spiel, Bronx-Hintergrund und M24-Kopflogo sind in der HTML-Datei enthalten. Die beiden Musikdateien unter `assets/` müssen für den Soundtrack danebenliegen. Ein Build ist nicht erforderlich.
+`index.html` direkt im Browser öffnen. Spiel, Bronx-Seitenhintergrund, das bereitgestellte Gassenmotiv für den Flipper-Tisch und M24-Kopflogo sind in der HTML-Datei enthalten. Die beiden Musikdateien unter `assets/` müssen für den Soundtrack danebenliegen. Ein Build ist nicht erforderlich.
 
 Für PWA, Offline-Cache und lokale Entwicklung mit installiertem Node.js:
 
@@ -22,15 +22,15 @@ Anschließend **[http://127.0.0.1:8090](http://127.0.0.1:8090)** öffnen. Für d
 
 ## Steuerung
 
-| Aktion | Tastatur | Handy / Tablet |
-| --- | --- | --- |
-| Linker / rechter Flipper | ← / → oder A / D | Linke / rechte Spielfeldhälfte oder Flipper-Tasten |
-| Kugel starten | Leertaste oder ↓ halten, dann loslassen | **HOLD TO LAUNCH** halten und loslassen |
-| Tisch anstoßen | N | — |
-| Pause / fortsetzen | P | Pause-Taste oben |
-| Vollbild umschalten | F | Vollbild-Taste oben |
-| Start / Neustart | Enter oder Startknopf | Startknopf |
-| Musik umschalten | Ghettoblaster anklicken | Ghettoblaster antippen |
+| Aktion                   | Tastatur                                | Handy / Tablet                                     |
+| ------------------------ | --------------------------------------- | -------------------------------------------------- |
+| Linker / rechter Flipper | ← / → oder A / D                        | Linke / rechte Spielfeldhälfte oder Flipper-Tasten |
+| Kugel starten            | Leertaste oder ↓ halten, dann loslassen | **HOLD TO LAUNCH** halten und loslassen            |
+| Tisch anstoßen           | N                                       | —                                                  |
+| Pause / fortsetzen       | P                                       | Pause-Taste oben                                   |
+| Vollbild umschalten      | F                                       | Vollbild-Taste oben                                |
+| Start / Neustart         | Enter oder Startknopf                   | Startknopf                                         |
+| Musik umschalten         | Ghettoblaster anklicken                 | Ghettoblaster antippen                             |
 
 Der Ghettoblaster schaltet zwischen **Gesang → Instrumental → Aus**. Seine Lautsprecher pulsieren anhand des tatsächlichen Abspielzeitpunkts. **FX ON/OFF** steuert die synthetischen Spieleffekte unabhängig von der Musik. Audio startet nach einer Benutzeraktion. Android kann Vollbild mit der Zurück-Geste bzw. Zurück-Taste beenden; am Desktop funktioniert auch Escape.
 
@@ -72,9 +72,9 @@ Beim direkten Öffnen über `file://` funktioniert das Spiel einschließlich lok
 
 ## Technik und Tests
 
-Vanilla JavaScript, Canvas und Web Audio ohne Framework oder Produktionsabhängigkeiten. Die eigene Physik läuft mit 240 festen Teilschritten pro Sekunde und verarbeitet bewegte Flipper, Reibung, Spin und Kugelkollisionen. Das Tisch-Artwork entsteht prozedural; Bronx-Hintergrund, M24-Silhouette, Musik und PWA-Gestaltung stammen aus dem M24-Slotmachine-Projekt.
+Vanilla JavaScript, Canvas und Web Audio ohne Framework oder Produktionsabhängigkeiten. Die eigene Physik läuft mit 240 festen Teilschritten pro Sekunde und verarbeitet bewegte Flipper, Reibung, Spin und Kugelkollisionen. Der Tisch kombiniert das bereitgestellte Gassenmotiv mit prozedural gezeichneten Spielelementen; Bronx-Seitenhintergrund, M24-Silhouette, Musik und PWA-Gestaltung stammen aus dem M24-Slotmachine-Projekt.
 
-Automatisierte Browserprüfungen mit laufendem lokalen Server:
+Automatisierte Prüfungen (jede Browser-Suite startet ihren eigenen Server):
 
 ```sh
 npm install
@@ -83,12 +83,19 @@ npm test
 npm run test:responsive
 npm run test:audio
 npm run test:drain
+npm run test:server
+npm run test:pwa
+npm run format:check
 ```
 
 Die Prüfungen decken unter anderem Launcher, Bumper, Multiball, Rampe, Drain, Neustart, Tilt, Touch-Layout, neun Viewport-Größen, natürliche Ballverluste ohne Flipper-Eingabe sowie Offline-Wiedergabe beider Tracks ab. Testbilder und Zustände landen unter `output/` und werden nicht eingecheckt.
 
 Zusätzlich auf einem per USB angeschlossenen **Samsung Galaxy S10e (SM-G970F)** geprüft: echtes Hoch-/Querformat, Browserfenster, natives Vollbild, Feder-Aufzug, gleichzeitige Touch-Flipper und Musikwechsel. Fenster-Viewports unter anderem 360 × 617 / 673 × 280, Vollbild 360 × 760 / 760 × 360 CSS-Pixel. Die automatische Bildschirmdrehung wurde nach den Tests wiederhergestellt.
 
+Die interne Struktur, Physikeinheiten, Test-Schnittstelle und Hinweise zur Wartung sind in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) beschrieben. `npm run format` formatiert die Quellen einheitlich.
+
 ## Medien und Herkunft
+
+Das Gassenmotiv für den Flipper-Tisch wurde vom Benutzer für dieses Projekt bereitgestellt.
 
 **meuse24 / M24 GMEU, 2026.** Die ursprünglichen Medienbedingungen bleiben in [MEDIA-LICENSE.md](MEDIA-LICENSE.md) erhalten. Der übernommene PWA-Code stammt aus Lucky Seven; dessen MIT-Hinweis steht in [SLOT-PWA-LICENSE.txt](SLOT-PWA-LICENSE.txt). Die Medienlizenz ist keine allgemeine Freigabe als eigenständiges Asset-Paket.

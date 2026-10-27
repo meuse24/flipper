@@ -1,8 +1,113 @@
-// Local preview; correctly serves PWA metadata and MP3 byte ranges.
-const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
-const root=path.resolve(__dirname,'..'),port=Number(process.env.PINBALL_PORT)||8090;
-const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.webmanifest':'application/manifest+json','.png':'image/png','.mp3':'audio/mpeg'};
-http.createServer((req,res)=>{let file;try{file=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(file===root)file=path.join(root,'index.html')}catch{res.writeHead(400);return res.end()}
-if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}
-fs.stat(file,(err,stat)=>{if(err||!stat.isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.setHeader('Cache-Control','no-cache');res.setHeader('Accept-Ranges','bytes');let start=0,end=stat.size-1;
-if(req.headers.range){const m=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);if(!m){res.writeHead(416);return res.end()}start=m[1]?Number(m[1]):Math.max(0,stat.size-Number(m[2]));end=m[1]&&m[2]?Math.min(Number(m[2]),end):end;if(start>end||start>=stat.size){res.writeHead(416,{'Content-Range':`bytes */${stat.size}`});return res.end()}res.statusCode=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${stat.size}`)}res.setHeader('Content-Length',end-start+1);if(req.method==='HEAD')return res.end();fs.createReadStream(file,{start,end}).pipe(res)})}).listen(port,'127.0.0.1',()=>console.log(`BADBOY Pinball: http://127.0.0.1:${port}`));
+// Static preview only; the shipped game does not depend on Node.js.
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
+const PROJECT_ROOT = path.resolve(__dirname, "..");
+const MIME_TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".webmanifest": "application/manifest+json",
+  ".png": "image/png",
+  ".mp3": "audio/mpeg",
+};
+
+function resolveFile(root, requestURL) {
+  const pathname = decodeURIComponent(
+    new URL(requestURL, "http://localhost").pathname,
+  );
+  let file = path.resolve(root, "." + pathname);
+  if (file === root) file = path.join(root, "index.html");
+  // Check the resolved path, including encoded separators, before touching the filesystem.
+  return file.startsWith(root + path.sep) ? file : null;
+}
+
+/** A single inclusive byte range; null means unsatisfiable or unsupported.
+ * Audio elements use both ordinary ranges and suffixes such as bytes=-128. */
+function parseByteRange(header, size) {
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header);
+  if (!match) return null;
+  const start = match[1]
+    ? Number(match[1])
+    : Math.max(0, size - Number(match[2]));
+  const end =
+    match[1] && match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+  if (
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(end) ||
+    start > end ||
+    start >= size
+  )
+    return null;
+  return { start, end };
+}
+
+function sendFile(request, response, file) {
+  fs.stat(file, (error, stat) => {
+    if (error || !stat.isFile()) {
+      response.writeHead(404);
+      response.end();
+      return;
+    }
+    response.setHeader(
+      "Content-Type",
+      MIME_TYPES[path.extname(file)] || "application/octet-stream",
+    );
+    response.setHeader("Cache-Control", "no-cache");
+    response.setHeader("Accept-Ranges", "bytes");
+    let range = { start: 0, end: stat.size - 1 };
+    if (request.headers.range) {
+      range = parseByteRange(request.headers.range, stat.size);
+      if (!range) {
+        response.writeHead(416, { "Content-Range": `bytes */${stat.size}` });
+        response.end();
+        return;
+      }
+      response.statusCode = 206;
+      response.setHeader(
+        "Content-Range",
+        `bytes ${range.start}-${range.end}/${stat.size}`,
+      );
+    }
+    response.setHeader(
+      "Content-Length",
+      Math.max(0, range.end - range.start + 1),
+    );
+    if (request.method === "HEAD" || stat.size === 0) {
+      response.end();
+      return;
+    }
+    // A file can disappear between stat() and open(); report it through the response.
+    const stream = fs.createReadStream(file, range);
+    stream.on("error", (error) => response.destroy(error));
+    stream.pipe(response);
+  });
+}
+
+// Tests create an isolated server on port 0. npm start keeps the familiar fixed port.
+function createPreviewServer({ root = PROJECT_ROOT } = {}) {
+  root = path.resolve(root);
+  return http.createServer((request, response) => {
+    let file;
+    try {
+      file = resolveFile(root, request.url);
+    } catch {
+      response.writeHead(400);
+      response.end();
+      return;
+    }
+    if (!file) {
+      response.writeHead(403);
+      response.end();
+      return;
+    }
+    sendFile(request, response, file);
+  });
+}
+
+if (require.main === module) {
+  const port = Number(process.env.PINBALL_PORT) || 8090;
+  createPreviewServer().listen(port, "127.0.0.1", () =>
+    console.log(`BADBOY Pinball: http://127.0.0.1:${port}`),
+  );
+}
+module.exports = { createPreviewServer, parseByteRange };

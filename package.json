@@ -12,9 +12,14 @@
     "test": "node tests/smoke.mjs",
     "test:responsive": "node tests/responsive.mjs",
     "test:audio": "node tests/offline-audio.mjs",
-    "test:drain": "node tests/natural-drain.mjs"
+    "test:drain": "node tests/natural-drain.mjs",
+    "test:server": "node tests/server.mjs",
+    "format": "prettier --write index.html pwa.js sw.js scripts tests package.json README.md docs/ARCHITECTURE.md",
+    "format:check": "prettier --check index.html pwa.js sw.js scripts tests package.json README.md docs/ARCHITECTURE.md",
+    "test:pwa": "node tests/pwa.mjs"
   },
   "devDependencies": {
-    "playwright": "1.64.1"
+    "playwright": "1.64.1",
+    "prettier": "^3.6.2"
   }
 }

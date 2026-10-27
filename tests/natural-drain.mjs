@@ -1,4 +1,80 @@
-import {chromium} from 'playwright';import fs from 'node:fs';
-const browser=await chromium.launch({headless:true}),context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-const source=fs.readFileSync('index.html','utf8').replace(/sync\(\);\s*\}\)\(\);/,'sync();window.__physics={state,start,update,collide,rails,flippers};})();');await page.route('**/index.html',route=>route.fulfill({contentType:'text/html',body:source}));await page.goto('http://127.0.0.1:8090/index.html');
-const result=await page.evaluate(()=>{const {state:s,start,update}=__physics;const runs=[];for(const setup of [{name:'captured right-outlane orbit',x:438,y:520.1,vx:-396.1,vy:738.2,entered:true},...Array.from({length:21},(_,i)=>i/20).map(p=>({name:'unattended launch '+p,x:470,y:733,vx:-8,vy:-(870+430*p),entered:false}))]){start();s.save=0;const ball=s.balls[0];Object.assign(ball,{launched:true,...setup});let elapsed=0,maxY=ball.y,reachedFlippers=false;for(;elapsed<60;elapsed+=1/240){update(1/240);maxY=Math.max(maxY,ball.y);if(ball.y>685&&ball.x<440)reachedFlippers=true;if(s.lives<3||!s.balls.some(b=>b.launched))break}runs.push({name:setup.name,seconds:+elapsed.toFixed(2),reachedFlippers,maxY:+maxY.toFixed(1),drained:s.lives<3,score:s.score,ball:{x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy}})}return runs});console.table(result.map(({name,seconds,reachedFlippers,drained})=>({name,seconds,reachedFlippers,drained})));fs.mkdirSync('output',{recursive:true});fs.writeFileSync('output/natural-drain-results.json',JSON.stringify(result,null,2));await browser.close();if(errors.length)throw Error(errors.join('\n'));if(result.some(r=>!r.reachedFlippers||!r.drained))process.exit(1);
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { withGameBrowser, openGame } from "./helpers.mjs";
+
+await withGameBrowser(async ({ newContext, origin }) => {
+  const context = await newContext({ serviceWorkers: "block" });
+  const page = await openGame(context, origin);
+  const result = await page.evaluate(() => {
+    const test = window.__pinballTest;
+    const { launcher, step } = test.constants;
+    // This captured outlane state used to loop above y=522 for over 60 seconds.
+    const scenarios = [
+      {
+        name: "captured right-outlane orbit",
+        x: 438,
+        y: 520.1,
+        vx: -396.1,
+        vy: 738.2,
+        entered: true,
+      },
+      ...Array.from({ length: 21 }, (_, i) => i / 20).map((power) => ({
+        name: `unattended launch ${power}`,
+        x: launcher.x,
+        y: launcher.y,
+        vx: launcher.vx,
+        vy: -(launcher.minSpeed + launcher.speedRange * power),
+        entered: false,
+      })),
+    ];
+    return scenarios.map((setup) => {
+      test.reset();
+      let state = test.configure({
+        ballSave: 0,
+        balls: [{ ...setup, launched: true }],
+      });
+      let elapsed = 0,
+        maxY = setup.y,
+        reachedFlippers = false,
+        ball = state.balls[0];
+      const originalBallId = ball.id;
+      // Preserve the original tracked ball after it drains during multiball.
+      for (; elapsed < 60; elapsed += step) {
+        state = test.stepTicks();
+        ball =
+          state.balls.find((value) => value.id === originalBallId) ||
+          state.drainedBalls.find((value) => value.id === originalBallId) ||
+          ball;
+        maxY = Math.max(maxY, ball.y);
+        if (ball.y > 685 && ball.x < 440) reachedFlippers = true;
+        if (state.lives < 3 || !state.balls.some((ball) => ball.launched))
+          break;
+      }
+      return {
+        name: setup.name,
+        seconds: +elapsed.toFixed(2),
+        reachedFlippers,
+        maxY: +maxY.toFixed(1),
+        drained: state.lives < 3,
+        score: state.score,
+        ball: { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy },
+      };
+    });
+  });
+  fs.writeFileSync(
+    "output/natural-drain-results.json",
+    JSON.stringify(result, null, 2),
+  );
+  console.table(
+    result.map(({ name, seconds, reachedFlippers, drained }) => ({
+      name,
+      seconds,
+      reachedFlippers,
+      drained,
+    })),
+  );
+  for (const run of result) {
+    assert.ok(run.reachedFlippers, `${run.name}: lower playfield`);
+    assert.ok(run.drained, `${run.name}: natural drain`);
+  }
+});
