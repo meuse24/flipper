@@ -1,0 +1,8 @@
+// Local preview; correctly serves PWA metadata and MP3 byte ranges.
+const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..'),port=Number(process.env.PINBALL_PORT)||8090;
+const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.webmanifest':'application/manifest+json','.png':'image/png','.mp3':'audio/mpeg'};
+http.createServer((req,res)=>{let file;try{file=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(file===root)file=path.join(root,'index.html')}catch{res.writeHead(400);return res.end()}
+if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}
+fs.stat(file,(err,stat)=>{if(err||!stat.isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.setHeader('Cache-Control','no-cache');res.setHeader('Accept-Ranges','bytes');let start=0,end=stat.size-1;
+if(req.headers.range){const m=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);if(!m){res.writeHead(416);return res.end()}start=m[1]?Number(m[1]):Math.max(0,stat.size-Number(m[2]));end=m[1]&&m[2]?Math.min(Number(m[2]),end):end;if(start>end||start>=stat.size){res.writeHead(416,{'Content-Range':`bytes */${stat.size}`});return res.end()}res.statusCode=206;res.setHeader('Content-Range',`bytes ${start}-${end}/${stat.size}`)}res.setHeader('Content-Length',end-start+1);if(req.method==='HEAD')return res.end();fs.createReadStream(file,{start,end}).pipe(res)})}).listen(port,'127.0.0.1',()=>console.log(`BADBOY Pinball: http://127.0.0.1:${port}`));

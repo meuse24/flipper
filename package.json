@@ -1,0 +1,19 @@
+{
+  "name": "badboy-ghetto-pinball",
+  "version": "1.0.0",
+  "private": true,
+  "description": "M24 Bronx-style pinball PWA with custom physics, multiball and an animated rap boombox.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meuse24/flipper.git"
+  },
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "test": "node tests/smoke.mjs",
+    "test:responsive": "node tests/responsive.mjs",
+    "test:audio": "node tests/offline-audio.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

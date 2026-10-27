@@ -1,0 +1,7 @@
+import {chromium} from 'playwright';import fs from 'node:fs';
+fs.mkdirSync('output',{recursive:true});
+const b=await chromium.launch({headless:true});const errors=[];
+for(const [w,h,touch]of [[1440,900,false],[1280,720,false],[1920,1080,false],[390,844,true],[360,640,true],[844,390,true],[760,360,true],[1024,768,true],[768,1024,true]]){
+const c=await b.newContext({viewport:{width:w,height:h},hasTouch:touch,isMobile:touch,serviceWorkers:'block'});const p=await c.newPage();p.on('pageerror',e=>errors.push(String(e)));await p.goto('http://127.0.0.1:8090');await p.waitForTimeout(200);const v=await p.evaluate(()=>{const r=document.querySelector('canvas').getBoundingClientRect(),buttons=[...document.querySelectorAll('.touch-controls button')].map(e=>e.getBoundingClientRect());return {w:innerWidth,h:innerHeight,body:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],canvas:{x:r.x,y:r.y,w:r.width,h:r.height,bottom:r.bottom},buttons:buttons.map(r=>({x:r.x,y:r.y,right:r.right,bottom:r.bottom}))}});console.log(w,h,JSON.stringify(v));if(v.canvas.bottom>h+1||v.canvas.x<0||v.canvas.x+v.canvas.w>w+1||v.body[1]>h+1)throw Error('overflow '+w+'x'+h);
+await p.screenshot({path:`output/fit-${w}x${h}-menu.png`});await p.click('#start-btn');await p.waitForTimeout(200);await p.screenshot({path:`output/fit-${w}x${h}-play.png`});await c.close()}
+console.log('ERRORS',errors);await b.close();if(errors.length)process.exit(1)
