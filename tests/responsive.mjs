@@ -38,6 +38,15 @@ async function checkLayout(page, label) {
       pageWidth: document.documentElement.scrollWidth,
       pageHeight: document.documentElement.scrollHeight,
       canvas: rect(document.querySelector("canvas")),
+      cabinet: rect(document.querySelector(".table-wrap")),
+      column: rect(document.querySelector(".table-column")),
+      verticalTouchSpace:
+        getComputedStyle(document.querySelector(".touch-controls")).position !==
+          "fixed" &&
+        getComputedStyle(document.querySelector(".touch-controls")).display !==
+          "none"
+          ? 52
+          : 0,
       buttons: [...document.querySelectorAll(".touch-controls button")]
         .map(rect)
         .filter((r) => r.width > 0 && r.height > 0),
@@ -55,6 +64,19 @@ async function checkLayout(page, label) {
     `${label}: page overflow`,
   );
   assert.ok(fits(layout.canvas), `${label}: whole table visible`);
+  assert.ok(
+    Math.abs(layout.canvas.y - layout.cabinet.y) < 1 &&
+      Math.abs(layout.canvas.bottom - layout.cabinet.bottom) < 1,
+    `${label}: artwork reaches both cabinet edges`,
+  );
+  const expectedHeight = Math.min(
+    layout.column.height - layout.verticalTouchSpace,
+    (layout.column.width * 820) / 520,
+  );
+  assert.ok(
+    layout.canvas.height >= expectedHeight - 3,
+    `${label}: table uses available height or width limit`,
+  );
   if (layout.start)
     assert.ok(fits(layout.start), `${label}: start/resume accessible`);
   for (const button of layout.buttons) {

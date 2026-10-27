@@ -40,7 +40,25 @@ Bei Flipperkontakten wird die Geschwindigkeit der bewegten Oberfläche (`ω × R
 
 Das Gassenmotiv wird zentriert und proportional auf den Tisch gezeichnet. Ein leichter dunkler Verlauf erhält den Kontrast zu Kugel, Inserts und Beschriftung. Bei einem Bild-Dekodierungsfehler bleibt der prozedurale Hintergrund verfügbar. `window.pinballReady` erlaubt Tests, die Bildinitialisierung abzuwarten.
 
-## Deterministische Tests
+## Rendering, Speicher und mobile Bildrate
+
+`RENDERING` begrenzt die Auflösung auf die tatsächliche Tischbreite in Geräte-Pixeln und maximal 1,25 logische Renderpixel auf Geräten mit grobem Zeiger beziehungsweise 2 am Desktop. Die 520 × 820 Physikkoordinaten bleiben davon unabhängig. `fitViewport()` reserviert nur die echte Touch-Zeile; Titel, Fußzeile und obere/untere Zierbänder beanspruchen keine zusätzliche Tischhöhe. Die Hintergrundgrafik reicht bis zu beiden Tischkanten. Breite und Seitenverhältnis begrenzen die Höhe auf schmalen Displays.
+
+`renderCache` hält höchstens drei Tisch-Layer (Hintergrund mit Schienen, Inserts, Zielzustände) und 13 vorgewärmte Bumper-Sprites je unterschiedlichem Radius. Painter erhalten ihren eigenen Canvas-Kontext; der Live-Kontext wird nicht vorübergehend umgebogen. Neue Combo-/Zielzustände ersetzen den bisherigen Layer. Bei geänderter Pixelgröße werden sämtliche alten Einträge freigegeben, identische Resize-Ereignisse behalten sie. Ein nachgeladenes Hintergrundbild invalidiert nur den Hintergrund-Layer. Diese Grenzen verhindern ein Anwachsen über Partien, Treffer oder Drehungen hinweg.
+
+Die RAF-Schleife zeichnet während des Echtzeitspiels kontinuierlich, bei Startmenü/Pause nur nach Änderungen und im Hintergrund gar nicht. `advanceTime()` zeichnet explizit; die manuelle Uhr erzeugt keine zusätzlichen automatischen Render-Samples. FPS zählen die gerenderten Frames; Menü und Pause bekommen statische Statusangaben. Identische Ladestand- und Lautsprecher-Transform-Werte werden nicht erneut ins DOM geschrieben.
+
+`tests/rendering.mjs` prüft Auflösungs-/Cache-Grenzen, warme Trefferphasen, Ziel-/Combo-Invalidierung, ruhende Menüs, Pause und wiederholte Drehungen. `window.__pinballTest.rendering()` liefert ausschließlich in `?test=1` die dafür nötigen Zähler und eine rechnerische Bitmap-Größe, keine GPU-Speichermessung. Echte Handy-Messungen und ihre Grenzen stehen in [PERFORMANCE.md](PERFORMANCE.md).
+
+## Eingaben und erste Aktivierung
+
+Physische `ShiftLeft`/`ShiftRight` steuern den jeweiligen Flipper zusätzlich zu Pfeilen und A/D. Pro Seite hält eine Menge die gedrückten Tastencodes; das Loslassen einer Taste löst eine andere weiterhin gehaltene Taste derselben Seite nicht. Fokusverlust leert beide Mengen.
+
+Ein Capture-Listener reagiert auf den ersten vertrauenswürdigen Klick und versucht innerhalb derselben Benutzeraktivierung Vollbild, AudioContext und Gesangstrack zu starten. Ein erster Musikknopf-Klick wird dabei nicht doppelt weitergeschaltet. Tastaturstart und bereits getroffene Musikentscheidungen werden respektiert. Abgelehntes oder fehlendes Vollbild bleibt ein nutzbarer Fenstermodus. `tests/startup.mjs` prüft Aktivierung, Musikfolge und Ablehnung; im Szenario-Modus bleibt die automatische Erstklick-Aktivierung aus.
+
+Die Dokumentwurzel ist mit `translate="no"` und `class="notranslate"` gekennzeichnet; das Google-Meta-Tag ergänzt die Browserhinweise gegen automatische Übersetzung. Die englische Sprachangabe bleibt korrekt. Die tatsächliche Anzeige von Browser-UI bleibt unter Kontrolle des jeweiligen Browsers.
+
+## Deterministische Spieltests
 
 Nur `?test=1` aktiviert `window.__pinballTest`. Die normale Website enthält keine freigeschaltete Szenario-Schnittstelle. Tests konfigurieren Kugeln über `configure()`, setzen eine Sitzung über `reset()` zurück und führen mit `stepTicks()` eine exakte Zahl von Simulationsschritten aus. Rückgaben sind Momentaufnahmen, keine veränderlichen Referenzen auf den Spielzustand. Kugel-IDs erlauben das Verfolgen derselben Kugel über Multiball und Drain hinweg.
 

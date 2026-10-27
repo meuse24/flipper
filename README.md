@@ -22,19 +22,21 @@ Anschließend **[http://127.0.0.1:8090](http://127.0.0.1:8090)** öffnen. Für d
 
 ## Steuerung
 
-| Aktion                   | Tastatur                                | Handy / Tablet                                     |
-| ------------------------ | --------------------------------------- | -------------------------------------------------- |
-| Linker / rechter Flipper | ← / → oder A / D                        | Linke / rechte Spielfeldhälfte oder Flipper-Tasten |
-| Kugel starten            | Leertaste oder ↓ halten, dann loslassen | **HOLD TO LAUNCH** halten und loslassen            |
-| Tisch anstoßen           | N                                       | —                                                  |
-| Pause / fortsetzen       | P                                       | Pause-Taste oben                                   |
-| Vollbild umschalten      | F                                       | Vollbild-Taste oben                                |
-| Start / Neustart         | Enter oder Startknopf                   | Startknopf                                         |
-| Musik umschalten         | Ghettoblaster anklicken                 | Ghettoblaster antippen                             |
+| Aktion                   | Tastatur                                     | Handy / Tablet                                     |
+| ------------------------ | -------------------------------------------- | -------------------------------------------------- |
+| Linker / rechter Flipper | Linke / rechte Shift-Taste, ← / → oder A / D | Linke / rechte Spielfeldhälfte oder Flipper-Tasten |
+| Kugel starten            | Leertaste oder ↓ halten, dann loslassen      | **HOLD TO LAUNCH** halten und loslassen            |
+| Tisch anstoßen           | N                                            | —                                                  |
+| Pause / fortsetzen       | P                                            | Pause-Taste oben                                   |
+| Vollbild umschalten      | F                                            | Vollbild-Taste oben                                |
+| Start / Neustart         | Enter oder Startknopf                        | Startknopf                                         |
+| Musik umschalten         | Ghettoblaster anklicken                      | Ghettoblaster antippen                             |
 
 Der Ghettoblaster schaltet zwischen **Gesang → Instrumental → Aus**. Seine Lautsprecher pulsieren anhand des tatsächlichen Abspielzeitpunkts. **FX ON/OFF** steuert die synthetischen Spieleffekte unabhängig von der Musik. Audio startet nach einer Benutzeraktion. Android kann Vollbild mit der Zurück-Geste bzw. Zurück-Taste beenden; am Desktop funktioniert auch Escape.
 
-Die **FPS**-Taste oben schaltet die Bildratenanzeige am oberen Tischrand ein oder aus. Sie ist standardmäßig aus; die Auswahl wird lokal gespeichert. Der Wert wird alle 0,5 Sekunden aus den tatsächlich gerenderten Frames berechnet.
+Beim ersten echten Klick versucht das Spiel, Vollbild zu aktivieren, und startet den Gesangstrack. Browser ohne nutzbares Vollbild bleiben im Fenster. Ein erster Klick auf den Ghettoblaster startet ebenfalls zunächst Gesang; weitere Klicks schalten normal weiter. Die Oberfläche trägt `translate="no"`, `notranslate` und das Google-Meta-Tag, damit unterstützende Browser keine automatische Übersetzung anbieten.
+
+Die **FPS**-Taste oben schaltet die Bildratenanzeige am Spielfeldrand ein oder aus. Sie ist standardmäßig aus; die Auswahl wird lokal gespeichert. Der Wert wird alle 0,5 Sekunden aus den tatsächlich gerenderten Frames berechnet. In der Pause steht dort **FPS PAUSED**, im Menü **FPS —**, weil der Tisch dann nur bei Änderungen neu gezeichnet wird.
 
 ## Spielregeln
 
@@ -48,6 +50,10 @@ Die **FPS**-Taste oben schaltet die Bildratenanzeige am oberen Tischrand ein ode
 ## Fenster, Vollbild und Ausrichtung
 
 Die Größenberechnung berücksichtigt den sichtbaren Viewport, mobile Browserleisten, Displayausschnitte und Vollbildwechsel. Die Tischproportionen und die Physik bleiben beim Drehen erhalten. Im Hochformat stehen Score und Touch-Tasten oberhalb bzw. unterhalb des Tisches; auf niedrigen Querformat-Displays liegen die Flipper-Tasten seitlich. Start- und Pausenmenüs passen sich ebenfalls an die verfügbare Höhe an.
+
+Das Spielfeld nutzt die verfügbare Höhe ohne obere und untere Zierrahmen oder zusätzliche Titel-/Fußzeilen. Das Hintergrundmotiv reicht bis an beide Tischkanten. Die Seitenproportionen bleiben erhalten; auf sehr schmalen Displays begrenzt die Breite die Tischhöhe.
+
+Für flüssiges Spielen werden Schienen, Ziele, Inserts und alle 13 Bumper-Leuchtphasen in begrenzten Grafik-Caches gehalten. Die Canvas-Auflösung folgt der sichtbaren Tischgröße; auf Touch-Geräten ist der Renderfaktor auf 1,25 begrenzt, am Desktop auf 2. Dadurch bleiben mehr Reserven für 60 FPS, bei etwas weicheren Details auf großen Handy-Displays. Die Physik läuft weiterhin mit 240 Hz. Messaufbau und Ergebnisse: [Performance-Dokumentation](docs/PERFORMANCE.md).
 
 ## Als App installieren / offline spielen
 
@@ -99,6 +105,8 @@ npm install
 npx playwright install chromium
 npm test
 npm run test:responsive
+npm run test:rendering
+npm run test:startup
 npm run test:audio
 npm run test:drain
 npm run test:server

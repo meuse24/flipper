@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
   <head>
     <meta charset="utf-8" />
+    <meta name="google" content="notranslate" />
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
@@ -1444,6 +1445,64 @@
           inset: 50px 8px 8px;
         }
       }
+      /* Give the table the viewport height; decorative cabinet bands need no rows. */
+      main {
+        padding: 0 8px;
+      }
+      .title-row,
+      footer {
+        display: none;
+      }
+      .table-wrap {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+      }
+      .table-wrap canvas {
+        border-radius: 0;
+      }
+      .table-top {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        height: auto;
+        padding: 0;
+        z-index: 2;
+        pointer-events: none;
+        font-size: 9px;
+      }
+      .table-top output {
+        padding: 4px 6px;
+        border-radius: 3px;
+        background: #0a130de0;
+      }
+      .table-wrap .overlay {
+        position: absolute;
+        inset: 0;
+      }
+      .touch-controls {
+        margin-top: 4px;
+      }
+      @media (orientation: portrait) and (max-width: 900px) {
+        main {
+          padding: 0;
+        }
+        .layout {
+          gap: 4px;
+        }
+      }
+      @media (max-height: 600px) and (orientation: landscape) {
+        .table-wrap .overlay {
+          position: fixed;
+          inset: calc(43px + env(safe-area-inset-top))
+            env(safe-area-inset-right) env(safe-area-inset-bottom)
+            env(safe-area-inset-left);
+        }
+        .touch-controls {
+          margin: 0;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1550,23 +1609,15 @@
         <section class="table-column">
           <div class="table-wrap">
             <div class="table-top">
-              <span
-                ><span id="table-label">BB / CUSTOM BUILT</span
-                ><output id="fps-display" aria-live="off" hidden
-                  >FPS —</output
-                ></span
-              ><span>● STREET CRED: MAX</span>
+              <output id="fps-display" aria-live="off" hidden>FPS —</output>
             </div>
             <canvas
               id="table"
               width="1040"
               height="1640"
-              aria-label="Pinball table. Arrow keys control flippers. Hold and release Space to launch."
+              aria-label="Pinball table. Left and right Shift or arrow keys control flippers. Hold and release Space to launch."
               tabindex="0"
             ></canvas>
-            <div class="table-bottom">
-              <span>808 BASS SYSTEM</span><span>BUILT FOR THE BLOCK</span>
-            </div>
             <div class="overlay" id="overlay">
               <div class="overlay-inner">
                 <div
@@ -1604,8 +1655,8 @@
                 </p>
                 <button class="primary" id="start-btn">LET’S PLAY ↗</button>
                 <div class="tiny">
-                  ← → FLIPPERS · HOLD SPACE TO LAUNCH<br />P PAUSE · N NUDGE · F
-                  FULLSCREEN
+                  L / R SHIFT OR ← → FLIPPERS · HOLD SPACE TO LAUNCH<br />P
+                  PAUSE · N NUDGE · F FULLSCREEN
                 </div>
                 <div class="pwa-actions">
                   <button id="install-app" type="button" hidden>
@@ -1698,7 +1749,8 @@
           <section class="panel">
             <h2>KNOW YOUR MOVES</h2>
             <div class="controls-row">
-              <span>Flippers</span><span><kbd>←</kbd> <kbd>→</kbd></span>
+              <span>Flippers</span
+              ><span><kbd>SHIFT L / R</kbd> <kbd>←</kbd> <kbd>→</kbd></span>
             </div>
             <div class="controls-row"><span>Launch</span><kbd>SPACE</kbd></div>
             <div class="controls-row"><span>Nudge</span><kbd>N</kbd></div>
@@ -1946,6 +1998,14 @@
           kicker: 400,
           multiball: 1500,
         });
+        // Measured on the S10e: preserve 240 Hz physics; budget only drawing pixels.
+        const RENDERING = Object.freeze({
+          mobileMaxScale: 1.25,
+          desktopMaxScale: 2,
+          flashSteps: 12,
+          flashSeconds: 0.16,
+          glowPadding: 50,
+        });
         // Explicit opt-in: ordinary pages never expose mutable test scenarios.
         const TEST_MODE =
           new URLSearchParams(location.search).get("test") === "1";
@@ -2005,7 +2065,6 @@
             fpsVisible ? "Hide FPS" : "Show FPS",
           );
           $("fps-display").hidden = !fpsVisible;
-          $("table-label").hidden = fpsVisible;
           fpsStart = null;
           fpsFrames = 0;
           $("fps-display").textContent = "FPS —";
@@ -2020,13 +2079,21 @@
         syncFps();
         document.addEventListener("visibilitychange", syncFps);
         // Measure rendered frames using real RAF time, independently of physics ticks.
-        function updateFps(now) {
+        function updateFps(now, rendered) {
           if (!fpsVisible || document.hidden) return;
+          if (state.mode !== "playing") {
+            fpsStart = null;
+            fpsFrames = 0;
+            const label = state.mode === "paused" ? "FPS PAUSED" : "FPS —";
+            if ($("fps-display").textContent !== label)
+              $("fps-display").textContent = label;
+            return;
+          }
           if (fpsStart === null) {
             fpsStart = now;
             return;
           }
-          fpsFrames++;
+          if (rendered) fpsFrames++;
           const elapsed = now - fpsStart;
           if (elapsed >= 500) {
             $("fps-display").textContent =
@@ -2281,6 +2348,7 @@
           return b;
         }
         function sync() {
+          renderDirty = true;
           $("score").textContent = String(state.score).padStart(6, "0");
           $("multiplier").textContent = "×" + state.mult;
           $("balls").textContent =
@@ -2789,6 +2857,78 @@
         bg.width = W;
         bg.height = H;
         const g = bg.getContext("2d");
+        const renderCache = {
+          scale: 0,
+          generation: 0,
+          frames: 0,
+          table: null,
+          inserts: null,
+          insertKey: null,
+          targets: null,
+          targetKey: null,
+          bumpers: new Map(),
+        };
+        let renderDirty = true,
+          renderedMode = null,
+          renderedCharge = null;
+        function invalidateRenderCache() {
+          renderCache.scale = canvas.width / W;
+          renderCache.generation++;
+          renderCache.table = renderCache.inserts = renderCache.targets = null;
+          renderCache.insertKey = renderCache.targetKey = null;
+          renderCache.bumpers.clear();
+          renderDirty = true;
+        }
+        /** Each layer owns a context; painters never swap the live canvas context.
+         * At most three table layers and 13 sprites per distinct bumper radius exist. */
+        function makeRenderLayer(paint, x = 0, y = 0, width = W, height = H) {
+          const layer = document.createElement("canvas");
+          const scale = canvas.width / W;
+          layer.width = Math.ceil(width * scale);
+          layer.height = Math.ceil(height * scale);
+          const context = layer.getContext("2d");
+          context.setTransform(scale, 0, 0, scale, -x * scale, -y * scale);
+          paint(context);
+          return { canvas: layer, x, y, width, height };
+        }
+        function drawRenderLayer(layer) {
+          ctx.drawImage(
+            layer.canvas,
+            layer.x,
+            layer.y,
+            layer.width,
+            layer.height,
+          );
+        }
+        function prepareBumperSprites() {
+          // Warm every flash phase outside the game loop; hits never compile blur effects.
+          for (const radius of new Set(bumpers.map((bumper) => bumper.r))) {
+            const half = radius + RENDERING.glowPadding;
+            for (let phase = 0; phase <= RENDERING.flashSteps; phase++) {
+              renderCache.bumpers.set(
+                radius + ":" + phase,
+                makeRenderLayer(
+                  (context) =>
+                    speaker(
+                      {
+                        x: 0,
+                        y: 0,
+                        r: radius,
+                        flash:
+                          (phase / RENDERING.flashSteps) *
+                          RENDERING.flashSeconds,
+                      },
+                      context,
+                    ),
+                  -half,
+                  -half,
+                  half * 2,
+                  half * 2,
+                ),
+              );
+            }
+          }
+        }
         function line(c, p, color, width = 2) {
           c.beginPath();
           c.moveTo(p[0], p[1]);
@@ -2942,54 +3082,75 @@
           for (let i = 0; i < 10; i++)
             line(g, [195 + i * 13, 770, 201 + i * 13, 779], "#b5d36033", 5);
           text(g, "THE DRAIN TAKES NO PRISONERS", 260, 804, 8, "#8b9c73");
+          renderCache.table = null;
+          renderDirty = true;
         }
         buildArt();
-        function speaker(o) {
-          ctx.save();
-          ctx.translate(o.x, o.y);
+        function speaker(o, context = ctx) {
+          context.save();
+          context.translate(o.x, o.y);
           const pulse = o.flash / 0.16;
-          ctx.shadowBlur = pulse ? 25 : 10;
-          ctx.shadowColor = C.acid;
-          ctx.fillStyle = "#101610";
-          ctx.strokeStyle = pulse ? "#efffd2" : "#a4d84c";
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(0, 0, o.r + pulse * 3, 0, 7);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
+          context.shadowBlur = pulse ? 25 : 10;
+          context.shadowColor = C.acid;
+          context.fillStyle = "#101610";
+          context.strokeStyle = pulse ? "#efffd2" : "#a4d84c";
+          context.lineWidth = 3;
+          context.beginPath();
+          context.arc(0, 0, o.r + pulse * 3, 0, 7);
+          context.fill();
+          context.stroke();
+          context.shadowBlur = 0;
           for (let r = o.r - 7; r > 8; r -= 5) {
-            ctx.strokeStyle = r % 2 ? "#424e36" : "#293224";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, 7);
-            ctx.stroke();
+            context.strokeStyle = r % 2 ? "#424e36" : "#293224";
+            context.lineWidth = 2;
+            context.beginPath();
+            context.arc(0, 0, r, 0, 7);
+            context.stroke();
           }
-          const grad = ctx.createRadialGradient(-4, -5, 2, 0, 0, 15);
+          const grad = context.createRadialGradient(-4, -5, 2, 0, 0, 15);
           grad.addColorStop(0, "#7c9161");
           grad.addColorStop(1, "#161e13");
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(0, 0, 14 + pulse * 2, 0, 7);
-          ctx.fill();
-          text(ctx, "808", 0, 4, 9, pulse ? "white" : "#bdcf9b", "900");
+          context.fillStyle = grad;
+          context.beginPath();
+          context.arc(0, 0, 14 + pulse * 2, 0, 7);
+          context.fill();
+          text(context, "808", 0, 4, 9, pulse ? "white" : "#bdcf9b", "900");
           for (let i = 0; i < 4; i++) {
             const a = (i * Math.PI) / 2 + 0.7;
-            ctx.fillStyle = "#a6ad85";
-            ctx.beginPath();
-            ctx.arc(
+            context.fillStyle = "#a6ad85";
+            context.beginPath();
+            context.arc(
               Math.cos(a) * (o.r - 4),
               Math.sin(a) * (o.r - 4),
               1.4,
               0,
               7,
             );
-            ctx.fill();
+            context.fill();
           }
-          ctx.restore();
+          context.restore();
         }
         function render() {
           const dpr = canvas.width / W;
+          if (renderCache.scale !== dpr) invalidateRenderCache();
+          if (!renderCache.bumpers.size) prepareBumperSprites();
+          if (!renderCache.table)
+            renderCache.table = makeRenderLayer((context) => {
+              context.drawImage(bg, 0, 0);
+              drawRails(context);
+            });
+          if (renderCache.insertKey !== state.combo || !renderCache.inserts) {
+            renderCache.inserts = makeRenderLayer(drawInserts);
+            renderCache.insertKey = state.combo;
+          }
+          const targetKey = targets.reduce(
+            (key, target, index) => key | (Number(target.hit) << index),
+            0,
+          );
+          if (renderCache.targetKey !== targetKey || !renderCache.targets) {
+            renderCache.targets = makeRenderLayer(drawTargets);
+            renderCache.targetKey = targetKey;
+          }
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           ctx.clearRect(0, 0, W, H);
           ctx.save();
@@ -2998,34 +3159,56 @@
               (visualRandom() - 0.5) * state.shake,
               (visualRandom() - 0.5) * state.shake,
             );
-          ctx.drawImage(bg, 0, 0);
-          drawRails();
-          drawInserts();
-          for (const bumper of bumpers) speaker(bumper);
-          drawTargets();
+          drawRenderLayer(renderCache.table);
+          drawRenderLayer(renderCache.inserts);
+          for (const bumper of bumpers) {
+            const phase = clamp(
+              Math.round(
+                (bumper.flash / RENDERING.flashSeconds) * RENDERING.flashSteps,
+              ),
+              0,
+              RENDERING.flashSteps,
+            );
+            ctx.save();
+            ctx.translate(bumper.x, bumper.y);
+            drawRenderLayer(renderCache.bumpers.get(bumper.r + ":" + phase));
+            ctx.restore();
+          }
+          drawRenderLayer(renderCache.targets);
           drawFlippers();
           drawPlunger();
           drawBalls();
           drawEffects();
           ctx.restore();
-          $("power").style.width = state.charge * 100 + "%";
+          if (renderedCharge !== state.charge) {
+            $("power").style.width = state.charge * 100 + "%";
+            renderedCharge = state.charge;
+          }
+          renderCache.frames++;
+          renderDirty = false;
+          renderedMode = state.mode;
         }
-        function drawRails() {
+        function drawRails(context = ctx) {
           for (const r of rails) {
-            line(ctx, [r.ax, r.ay, r.bx, r.by], "#030603", r.r * 2 + 5);
-            line(ctx, [r.ax, r.ay, r.bx, r.by], r.stroke, r.r * 2);
-            line(ctx, [r.ax - 1, r.ay - 2, r.bx - 1, r.by - 2], r.highlight, 2);
+            line(context, [r.ax, r.ay, r.bx, r.by], "#030603", r.r * 2 + 5);
+            line(context, [r.ax, r.ay, r.bx, r.by], r.stroke, r.r * 2);
+            line(
+              context,
+              [r.ax - 1, r.ay - 2, r.bx - 1, r.by - 2],
+              r.highlight,
+              2,
+            );
           }
         }
-        function drawInserts() {
+        function drawInserts(context = ctx) {
           for (let i = 0; i < 5; i++) {
-            ctx.fillStyle = state.combo > i + 1 ? C.acid : "#36402b";
-            ctx.beginPath();
-            ctx.arc(203 + i * 27, 568, 4, 0, 7);
-            ctx.fill();
+            context.fillStyle = state.combo > i + 1 ? C.acid : "#36402b";
+            context.beginPath();
+            context.arc(203 + i * 27, 568, 4, 0, 7);
+            context.fill();
           }
           text(
-            ctx,
+            context,
             state.combo > 2 ? "COMBO ×" + state.combo : "STACK YOUR RESPECT",
             258,
             592,
@@ -3033,32 +3216,32 @@
             state.combo > 2 ? C.acid : "#8ca373",
             "900",
           );
-          ctx.save();
-          ctx.shadowColor = C.pink;
-          ctx.shadowBlur = 14;
-          ctx.strokeStyle = C.pink;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(263, 176, 20, 0, 7);
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-          text(ctx, "$", 263, 182, 18, C.pink, "900");
-          ctx.restore();
+          context.save();
+          context.shadowColor = C.pink;
+          context.shadowBlur = 14;
+          context.strokeStyle = C.pink;
+          context.lineWidth = 3;
+          context.beginPath();
+          context.arc(263, 176, 20, 0, 7);
+          context.stroke();
+          context.shadowBlur = 0;
+          text(context, "$", 263, 182, 18, C.pink, "900");
+          context.restore();
         }
-        function drawTargets() {
+        function drawTargets(context = ctx) {
           for (const t of targets) {
-            ctx.save();
-            ctx.translate(t.x, t.y);
-            ctx.rotate(-0.13);
-            ctx.fillStyle = t.hit ? "#282c1e" : C.gold;
-            ctx.shadowColor = C.gold;
-            ctx.shadowBlur = t.hit ? 0 : 11;
-            ctx.fillRect(-9, -15, 18, 30);
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = t.hit ? "#596144" : "#fff0b0";
-            ctx.strokeRect(-9, -15, 18, 30);
+            context.save();
+            context.translate(t.x, t.y);
+            context.rotate(-0.13);
+            context.fillStyle = t.hit ? "#282c1e" : C.gold;
+            context.shadowColor = C.gold;
+            context.shadowBlur = t.hit ? 0 : 11;
+            context.fillRect(-9, -15, 18, 30);
+            context.shadowBlur = 0;
+            context.strokeStyle = t.hit ? "#596144" : "#fff0b0";
+            context.strokeRect(-9, -15, 18, 30);
             text(
-              ctx,
+              context,
               t.hit ? "·" : "$",
               0,
               5,
@@ -3066,7 +3249,7 @@
               t.hit ? "#67714d" : "#3a2b0b",
               "900",
             );
-            ctx.restore();
+            context.restore();
           }
         }
         function drawFlippers() {
@@ -3195,25 +3378,35 @@
             controls = document.querySelector(".touch-controls");
           const controlSpace =
             !landscape && getComputedStyle(controls).display !== "none"
-              ? 56
+              ? 52
               : 0;
-          // CSS-pixel allowances for cabinet borders, header and footer at each breakpoint.
-          // Keep these in sync with the cabinet CSS; responsive tests cover all three layouts.
-          const overhead = landscape ? 48 : vw <= 900 && vh > vw ? 58 : 68;
+          // The image reaches both cabinet edges. Reserve only the real touch row.
           const width = Math.max(
             80,
             Math.min(
-              ((area.height - overhead - controlSpace) * 520) / 820 +
-                (landscape ? 12 : 18),
-              landscape ? vw - 2 * Math.max(142, vw * 0.23) - 48 : area.width,
+              ((area.height - controlSpace) * W) / H,
+              landscape ? vw - 2 * Math.max(142, vw * 0.23) - 24 : area.width,
             ),
           );
           de.style.setProperty("--cab-width", Math.floor(width) + "px");
           fittedH = vh;
           fitOverlay();
-          const ratio = Math.min(2, devicePixelRatio || 1);
-          canvas.width = Math.round(W * ratio);
-          canvas.height = Math.round(H * ratio);
+          const coarse = matchMedia("(pointer: coarse)").matches;
+          const ratio = Math.max(
+            0.25,
+            Math.min(
+              coarse ? RENDERING.mobileMaxScale : RENDERING.desktopMaxScale,
+              (canvas.getBoundingClientRect().width * (devicePixelRatio || 1)) /
+                W,
+            ),
+          );
+          const pixelWidth = Math.round(W * ratio),
+            pixelHeight = Math.round(H * ratio);
+          if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+            canvas.width = pixelWidth;
+            canvas.height = pixelHeight;
+            invalidateRenderCache();
+          }
           render();
         }
         function fitOverlay() {
@@ -3253,6 +3446,12 @@
           acc = 0,
           manualClock = TEST_MODE;
         function frame(now) {
+          if (document.hidden) {
+            last = now;
+            acc = 0;
+            requestAnimationFrame(frame);
+            return;
+          }
           if (Math.abs(innerHeight - fittedH) > 2 && !window.visualViewport)
             fitViewport();
           musicTick();
@@ -3264,8 +3463,12 @@
             }
           }
           last = now;
-          render();
-          updateFps(now);
+          const shouldRender =
+            renderDirty ||
+            renderedMode !== state.mode ||
+            (state.mode === "playing" && !manualClock);
+          if (shouldRender) render();
+          updateFps(now, shouldRender);
           requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
@@ -3349,6 +3552,15 @@
           }
           input[side] = on;
         }
+        const keyboardFlippers = { left: new Set(), right: new Set() };
+        const flipperKeySides = Object.freeze({
+          ArrowLeft: "left",
+          KeyA: "left",
+          ShiftLeft: "left",
+          ArrowRight: "right",
+          KeyD: "right",
+          ShiftRight: "right",
+        });
         function handleKeyDown(e) {
           if (
             e.target.closest?.("button,dialog") &&
@@ -3356,11 +3568,21 @@
           )
             return;
           if (
-            ["ArrowLeft", "ArrowRight", "Space", "ArrowDown"].includes(e.code)
+            [
+              "ArrowLeft",
+              "ArrowRight",
+              "ShiftLeft",
+              "ShiftRight",
+              "Space",
+              "ArrowDown",
+            ].includes(e.code)
           )
             e.preventDefault();
-          if (e.code === "ArrowLeft" || e.code === "KeyA") flip("left", true);
-          if (e.code === "ArrowRight" || e.code === "KeyD") flip("right", true);
+          const side = flipperKeySides[e.code];
+          if (side) {
+            keyboardFlippers[side].add(e.code);
+            flip(side, true);
+          }
           if (e.repeat) return;
           if (e.code === "Space" || e.code === "ArrowDown") chargeStart();
           if (
@@ -3374,13 +3596,17 @@
         }
         window.addEventListener("keydown", handleKeyDown);
         function handleKeyUp(e) {
-          if (e.code === "ArrowLeft" || e.code === "KeyA") flip("left", false);
-          if (e.code === "ArrowRight" || e.code === "KeyD")
-            flip("right", false);
+          const side = flipperKeySides[e.code];
+          if (side) {
+            keyboardFlippers[side].delete(e.code);
+            flip(side, keyboardFlippers[side].size > 0);
+          }
           if (e.code === "Space" || e.code === "ArrowDown") launch();
         }
         window.addEventListener("keyup", handleKeyUp);
         window.addEventListener("blur", () => {
+          keyboardFlippers.left.clear();
+          keyboardFlippers.right.clear();
           input.left = input.right = false;
           state.charging = false;
           state.charge = 0;
@@ -3529,6 +3755,10 @@
         }
         for (const b of musicButtons)
           b.addEventListener("click", () => {
+            if (initialMusicClick === b) {
+              initialMusicClick = null;
+              return;
+            }
             if (!$("overlay").hidden) enterFullscreen();
             musicTouched = true;
             themeMode = (themeMode + 1) % 3;
@@ -3536,7 +3766,11 @@
           });
         const speakerMembranes = [
           ...document.querySelectorAll(".speaker-membrane"),
-        ];
+        ].map((element) => ({
+          element,
+          menu: !!element.closest("#ghetto-sound"),
+          transform: null,
+        }));
         function musicTick() {
           const name = themeMode === 1 ? "song" : "loop",
             a = musicEls[name];
@@ -3547,8 +3781,13 @@
             strength = parseInt(sample || "0", 16) / 15;
           }
           const scale = 1 + strength * (0.5 + 0.5 * strength) * 0.18;
-          for (const m of speakerMembranes)
-            m.style.transform = "scale(" + scale.toFixed(3) + ")";
+          const transform = "scale(" + scale.toFixed(3) + ")";
+          for (const membrane of speakerMembranes) {
+            if (membrane.menu && $("overlay").hidden) continue;
+            if (membrane.transform === transform) continue;
+            membrane.element.style.transform = transform;
+            membrane.transform = transform;
+          }
         }
         document.addEventListener("visibilitychange", () => {
           if (document.hidden) {
@@ -3564,6 +3803,29 @@
         });
         syncMusic();
 
+        // Run inside the first trusted click, before a button's own action. Touch
+        // activation is available on click; pointerdown alone is insufficient.
+        let initialMusicClick = null;
+        if (!TEST_MODE) {
+          function activateOnFirstClick(event) {
+            if (!event.isTrusted) return;
+            document.removeEventListener("click", activateOnFirstClick, true);
+            // Keyboard start or an earlier explicit music choice already activated audio.
+            if (themeMode !== 0 || musicTouched || state.mode === "playing")
+              return;
+            enterFullscreen();
+            audio.init();
+            themeMode = 1;
+            const musicButton = event.target.closest?.(".ghetto-sound");
+            if (musicButton) {
+              initialMusicClick = musicButton;
+              musicTouched = true;
+            }
+            playTheme();
+          }
+          document.addEventListener("click", activateOnFirstClick, true);
+        }
+
         /** Scenario adapter exists only at ?test=1. It exposes values, not live state references.
          * Tests may place balls and step exact ticks; normal users keep the real-time loop. */
         if (TEST_MODE) {
@@ -3572,6 +3834,7 @@
               step: PHYSICS.step,
               launcher: LAUNCHER,
               table: TABLE,
+              rendering: RENDERING,
             }),
             reset() {
               nextBallId = 0;
@@ -3624,6 +3887,30 @@
               return { ...snapshot(true), drainedBalls };
             },
             state: () => snapshot(true),
+            rendering() {
+              const layers = [
+                renderCache.table,
+                renderCache.inserts,
+                renderCache.targets,
+                ...renderCache.bumpers.values(),
+              ].filter(Boolean);
+              return {
+                width: canvas.width,
+                height: canvas.height,
+                scale: renderCache.scale,
+                generation: renderCache.generation,
+                frames: renderCache.frames,
+                sprites: renderCache.bumpers.size,
+                layers: layers.length,
+                bytes: layers.reduce(
+                  (bytes, layer) =>
+                    bytes + layer.canvas.width * layer.canvas.height * 4,
+                  0,
+                ),
+                combo: renderCache.insertKey,
+                targets: renderCache.targetKey,
+              };
+            },
           });
         }
         /* Hosted PWA lifecycle is adapted from M24 Lucky Seven. Local-file play needs no helper. */

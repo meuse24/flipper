@@ -45,6 +45,43 @@ await withGameBrowser(async ({ newContext, origin }) => {
   await stepTime(page, 100);
   assert.ok((await readState(page)).flippers[0].angle < -0.4);
   await page.keyboard.up("ArrowLeft");
+  await page.keyboard.down("ShiftLeft");
+  await page.keyboard.down("ShiftRight");
+  await stepTime(page, 100);
+  let shifts = await readState(page);
+  assert.ok(
+    shifts.flippers.every((flipper) => flipper.held),
+    "Both Shift keys hold their flippers",
+  );
+  assert.ok(
+    shifts.flippers[0].angle < -0.4 && shifts.flippers[1].angle > 3.5,
+    "Shift keys move both flippers",
+  );
+  await page.keyboard.down("ArrowLeft");
+  await page.keyboard.up("ShiftLeft");
+  assert.equal(
+    (await readState(page)).flippers[0].held,
+    true,
+    "Other held left key keeps the flipper up",
+  );
+  await page.keyboard.up("ArrowLeft");
+  shifts = await readState(page);
+  assert.equal(shifts.flippers[0].held, false);
+  assert.equal(
+    shifts.flippers[1].held,
+    true,
+    "Releasing left Shift does not release right Shift",
+  );
+  await page.keyboard.up("ShiftRight");
+  assert.ok((await readState(page)).flippers.every((flipper) => !flipper.held));
+  await page.keyboard.down("ShiftLeft");
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  assert.equal(
+    (await readState(page)).flippers[0].held,
+    false,
+    "Blur releases Shift input",
+  );
+  await page.keyboard.up("ShiftLeft");
 
   // Scenarios use the explicit test adapter; assertions inspect observable outcomes.
   const mechanics = await page.evaluate(() => {

@@ -152,6 +152,8 @@ for (const suite of [
   "smoke",
   "natural-drain",
   "responsive",
+  "rendering",
+  "startup",
   "offline-audio",
   "pwa",
 ]) {
