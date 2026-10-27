@@ -70,6 +70,22 @@ Der versionierte Cache enthält auch beide Musikdateien und unterstützt Audio-B
 
 Beim direkten Öffnen über `file://` funktioniert das Spiel einschließlich lokaler Musikdateien; PWA-Installation und Service Worker benötigen einen Webserver. Alle öffentlichen Laufzeitdateien sind statisch und können beispielsweise auf GitHub Pages oder einem eigenen HTTPS-Webspace liegen.
 
+## Minimiertes Release und Webserver-Upload
+
+Wie beim Dino-Spiel bleiben die Quellen lesbar. Der optionale Release-Build minimiert JavaScript mit Terser, CSS mit CSSO und HTML mit HTMLMinifier-Terser:
+
+```sh
+npm ci
+npm run build
+npm run test:release
+npm run deploy -- --dry-run --tls12
+npm run deploy -- --tls12
+```
+
+`release/` enthält das vollständige Upload-Paket: neun Laufzeitdateien (HTML, PWA, Worker, Manifest, drei Icons, zwei MP3s) und zwei Lizenzhinweise. Den **Inhalt** dieses Ordners in das Spielverzeichnis hochladen. Quellcode-Werkzeuge, Tests und Zugangsdaten gehören nicht auf den Webserver. Größen und SHA-256-Hashes stehen in `output/release-report.json`.
+
+Die lokale, von Git ausgeschlossene `ftp.txt` enthält die öffentliche HTTPS-Spieladresse, danach `Server:`, `Username:` und `Passwort:`. Der Deploy-Befehl überträgt ausschließlich die festgelegten Release-Dateien per verschlüsseltem FTPS, prüft jede Datei über HTTPS und veröffentlicht den Worker zuletzt. Er verweigert veraltete oder veränderte Build-Dateien und eine bereits veröffentlichte Cacheversion. Weitere Details: [docs/RELEASE.md](docs/RELEASE.md).
+
 ## Technik und Tests
 
 Vanilla JavaScript, Canvas und Web Audio ohne Framework oder Produktionsabhängigkeiten. Die eigene Physik läuft mit 240 festen Teilschritten pro Sekunde und verarbeitet bewegte Flipper, Reibung, Spin und Kugelkollisionen. Der Tisch kombiniert das bereitgestellte Gassenmotiv mit prozedural gezeichneten Spielelementen; Bronx-Seitenhintergrund, M24-Silhouette, Musik und PWA-Gestaltung stammen aus dem M24-Slotmachine-Projekt.

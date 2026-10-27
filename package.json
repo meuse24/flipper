@@ -14,12 +14,18 @@
     "test:audio": "node tests/offline-audio.mjs",
     "test:drain": "node tests/natural-drain.mjs",
     "test:server": "node tests/server.mjs",
-    "format": "prettier --write index.html pwa.js sw.js scripts tests package.json README.md docs/ARCHITECTURE.md",
-    "format:check": "prettier --check index.html pwa.js sw.js scripts tests package.json README.md docs/ARCHITECTURE.md",
-    "test:pwa": "node tests/pwa.mjs"
+    "format": "prettier --write index.html pwa.js sw.js scripts tests package.json README.md docs/ARCHITECTURE.md docs/RELEASE.md",
+    "format:check": "prettier --check index.html pwa.js sw.js scripts tests package.json README.md docs/ARCHITECTURE.md docs/RELEASE.md",
+    "test:pwa": "node tests/pwa.mjs",
+    "build": "node scripts/build-release.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "test:release": "node tests/release.mjs"
   },
   "devDependencies": {
+    "csso": "5.0.5",
+    "html-minifier-terser": "7.2.0",
     "playwright": "1.64.1",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "terser": "5.51.2"
   }
 }

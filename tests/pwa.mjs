@@ -21,7 +21,10 @@ try {
   for (const file of files) {
     const destination = path.join(root, file);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
-    fs.copyFileSync(file, destination);
+    fs.copyFileSync(
+      path.join(process.env.PINBALL_TEST_ROOT || ".", file),
+      destination,
+    );
   }
   await withGameBrowser(
     async ({ newContext, origin }) => {
@@ -67,10 +70,7 @@ try {
       const nextCache = "badboy-pinball-test-update";
       const worker = fs
         .readFileSync(path.join(root, "sw.js"), "utf8")
-        .replace(
-          /const CACHE_NAME = "[^"]+";/,
-          `const CACHE_NAME = "${nextCache}";`,
-        );
+        .replace(/"badboy-pinball-v\d+"/, JSON.stringify(nextCache));
       fs.writeFileSync(path.join(root, "sw.js"), worker);
       await page.evaluate(async () => {
         const registration = await navigator.serviceWorker.getRegistration();

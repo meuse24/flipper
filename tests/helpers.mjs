@@ -9,7 +9,7 @@ const { createPreviewServer } = require("../scripts/serve.cjs");
  * No externally running server, fixed port, or rewritten production HTML is needed. */
 export async function withGameBrowser(
   run,
-  { expectedConsoleErrors = [], root } = {},
+  { expectedConsoleErrors = [], root = process.env.PINBALL_TEST_ROOT } = {},
 ) {
   fs.mkdirSync("output", { recursive: true });
   const server = createPreviewServer({ root });
