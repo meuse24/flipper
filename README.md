@@ -82,9 +82,10 @@ npx playwright install chromium
 npm test
 npm run test:responsive
 npm run test:audio
+npm run test:drain
 ```
 
-Die Prüfungen decken unter anderem Launcher, Bumper, Multiball, Rampe, Drain, Neustart, Tilt, Touch-Layout, neun Viewport-Größen sowie Offline-Wiedergabe beider Tracks ab. Testbilder und Zustände landen unter `output/` und werden nicht eingecheckt.
+Die Prüfungen decken unter anderem Launcher, Bumper, Multiball, Rampe, Drain, Neustart, Tilt, Touch-Layout, neun Viewport-Größen, natürliche Ballverluste ohne Flipper-Eingabe sowie Offline-Wiedergabe beider Tracks ab. Testbilder und Zustände landen unter `output/` und werden nicht eingecheckt.
 
 Zusätzlich auf einem per USB angeschlossenen **Samsung Galaxy S10e (SM-G970F)** geprüft: echtes Hoch-/Querformat, Browserfenster, natives Vollbild, Feder-Aufzug, gleichzeitige Touch-Flipper und Musikwechsel. Fenster-Viewports unter anderem 360 × 617 / 673 × 280, Vollbild 360 × 760 / 760 × 360 CSS-Pixel. Die automatische Bildschirmdrehung wurde nach den Tests wiederhergestellt.
 

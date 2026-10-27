@@ -1,5 +1,5 @@
 // PWA cache lifecycle adapted from M24 Lucky Seven for BADBOY Pinball.
-const CACHE_NAME = 'badboy-pinball-v6';
+const CACHE_NAME = 'badboy-pinball-v7';
 const CACHE_PREFIX = 'badboy-pinball-';
 const GAME_URL = new URL('./index.html', self.registration.scope).href;
 const STATIC_URLS = ['./assets/icon-180.png','./assets/icon-192.png','./assets/icon-512.png','./manifest.webmanifest','./pwa.js','./assets/lucky-seven-song.mp3','./assets/lucky-seven-theme.mp3'].map(file => new URL(file, self.registration.scope).href);
