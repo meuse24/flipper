@@ -41,6 +41,26 @@ await withGameBrowser(async ({ newContext, origin }) => {
       0,
       "Explicit music OFF survives start",
     );
+    assert.equal(
+      await page.evaluate(() => document.activeElement.id),
+      "table",
+      "Start moves focus out of the hidden menu",
+    );
+    await page.keyboard.down("Space");
+    await page.waitForTimeout(150);
+    assert.ok(
+      (await readState(page)).charge > 0,
+      "Space immediately charges after a button start",
+    );
+    await page.keyboard.up("Space");
+    assert.ok((await readState(page)).balls.some((ball) => ball.launched));
+    await page.keyboard.press("p");
+    await page.click("#start-btn");
+    assert.equal(
+      await page.evaluate(() => document.activeElement.id),
+      "table",
+      "Resume restores gameplay focus",
+    );
     await context.close();
   }
   const context = await newContext({ serviceWorkers: "block" });

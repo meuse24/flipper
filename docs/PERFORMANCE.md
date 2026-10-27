@@ -2,6 +2,8 @@
 
 Stand: 27. Oktober 2026. Historischer Audit: Quellstand `a568f66`, PWA-Cache v11. Integration: Release v12.
 
+Auslieferung v13 ergänzt die Fokusübergabe an den Tisch nach Start/Fortsetzen, damit die Leertaste unmittelbar nach einem Menü-Klick funktioniert. Das Rendering entspricht dem unten gemessenen integrierten Stand.
+
 Die größte gemessene Verbesserung kommt vom Vorzeichnen wiederverwendbarer Grafiken und einer begrenzten Canvas-Auflösung. Die geprüften Maßnahmen sind inzwischen in den Produktionscode integriert.
 
 ## Integration in v12

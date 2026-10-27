@@ -2371,6 +2371,7 @@
           }
           resetSession();
           $("overlay").hidden = true;
+          canvas.focus({ preventScroll: true });
           announce("HOLD SPACE. MAKE AN ENTRANCE.");
           sync();
         }
@@ -2488,6 +2489,7 @@
           } else if (state.mode === "paused") {
             state.mode = "playing";
             $("overlay").hidden = true;
+            canvas.focus({ preventScroll: true });
           }
         }
         function nudge() {

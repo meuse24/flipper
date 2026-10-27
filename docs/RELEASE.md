@@ -36,7 +36,7 @@ Die Medien bleiben unverändert; sie machen fast die gesamte Paketgröße aus. D
 Optional unter PowerShell als ZIP verpacken:
 
 ```powershell
-Compress-Archive -Path release/* -DestinationPath output/badboy-pinball-v12.zip -Force
+Compress-Archive -Path release/* -DestinationPath output/badboy-pinball-v13.zip -Force
 ```
 
 ## FTPS-Upload
@@ -61,9 +61,9 @@ Der Probelauf kontrolliert Build-Hashes, aktuelle Quellen und den veröffentlich
 
 Nur die gemeinsame Allowlist in `scripts/release-files.mjs` wird übertragen. Medien und weitere Voraussetzungen werden zuerst hochgeladen und jeweils per HTTPS/SHA-256 bestätigt; danach HTML, zuletzt der Service Worker. Fehler stoppen den Upload. Bestehende andere Serverdateien bleiben erhalten. Der Build selbst öffnet keine Netzwerkverbindung.
 
-## Release v12
+## Release v13
 
-Cache `badboy-pinball-v12` enthält die mobile Rendering-Optimierung, das größere Spielfeld ohne obere/untere Zierrahmen, die Shift-Steuerung, Übersetzungshinweise und Vollbild/Gesang beim ersten Klick. Die unveränderte 240-Hz-Physik wird mit denselben 22 Drain-Szenarien geprüft. Die Release-Suite führt zusätzlich `tests/rendering.mjs` und `tests/startup.mjs` gegen die minimierten Dateien aus. Details und echte S10e-Messungen: [PERFORMANCE.md](PERFORMANCE.md).
+Cache `badboy-pinball-v13` enthält die mobile Rendering-Optimierung, das größere Spielfeld ohne obere/untere Zierrahmen, die Shift-Steuerung, Übersetzungshinweise und Vollbild/Gesang beim ersten Klick. Gegenüber dem ersten Upload v12 wird nach Start und Fortsetzen auch der Tastaturfokus aus dem versteckten Menü auf den Tisch gesetzt, damit die Leertaste sofort lädt. Die unveränderte 240-Hz-Physik wird mit denselben 22 Drain-Szenarien geprüft. Die Release-Suite führt zusätzlich `tests/rendering.mjs` und `tests/startup.mjs` gegen die minimierten Dateien aus. Details und echte S10e-Messungen: [PERFORMANCE.md](PERFORMANCE.md).
 
 ## Nachweis einer früheren Veröffentlichung
 
