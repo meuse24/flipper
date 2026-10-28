@@ -36,7 +36,7 @@ Der Build verändert die Medien nicht; sie machen fast die gesamte Paketgröße 
 Optional unter PowerShell als ZIP verpacken:
 
 ```powershell
-Compress-Archive -Path release/* -DestinationPath output/badboy-pinball-v21.zip -Force
+Compress-Archive -Path release/* -DestinationPath output/badboy-pinball-v22.zip -Force
 ```
 
 ## FTPS-Upload
@@ -61,7 +61,13 @@ Der Probelauf kontrolliert Build-Hashes, aktuelle Quellen und den veröffentlich
 
 Nur die gemeinsame Allowlist in `scripts/release-files.mjs` wird übertragen. Medien und weitere Voraussetzungen werden zuerst hochgeladen und jeweils per HTTPS/SHA-256 bestätigt; danach HTML, zuletzt der Service Worker. Fehler stoppen den Upload. Bestehende andere Serverdateien bleiben erhalten. Der Build selbst öffnet keine Netzwerkverbindung.
 
-## Release v21
+## Release v22
+
+Cache `badboy-pinball-v22` begrenzt das Verketten von Gold Rush: Ab drei vorhandenen Kugeln sind die Gold-Targets abgedunkelt und gesperrt. Treffer prallen weiterhin physikalisch ab, geben aber keine Punkte und erzeugen keine neuen Kugeln. Sobald nach einem Verlust höchstens zwei Kugeln verbleiben, wird die Bank automatisch wieder aktiv. Kugeln auf der Rampe und im Ball Save zählen mit. Ein erneuter Gold Rush erzeugt wie bisher zwei zusätzliche Kugeln.
+
+`npm run test:gold` prüft die Sperre mit drei, vier und zwanzig Kugeln, den Rückprall ohne Belohnung, den normalen Gold Rush, Freigabe nach einem echten Drain sowie erneutes Auslösen mit zwei Kugeln. Der Release-Test führt diese Szenarien zusätzlich gegen die minimierte Fassung aus und prüft den Wechsel des gecachten Zielbilds.
+
+## Früheres Release v21
 
 Cache `badboy-pinball-v21` bündelt die BADBOY-Gesangs-/Instrumentaltracks als Mono-MP3, Bassanimation passend zu beiden Songs, bereinigte Flipper-Drehpunkte ohne Kugelfallen, Touch-Anstoßen mit sichtbarem Ruck und Tilt, größere Menü-Embleme, transparentere Start-/Pausenmenüs, priorisierte Arcade-Tischanzeigen und die echte Abschussbahn mit beweglicher Einwegklappe. Die Pfeiltasten bleiben als Paar zusammen; bei schmalem Hochformat entfällt der dekorative Header-Untertitel, damit er nicht mit dem Radio kollidiert.
 

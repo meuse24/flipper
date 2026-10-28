@@ -49,6 +49,7 @@ Die **FPS**-Taste oben schaltet die Bildratenanzeige am Spielfeldrand ein oder a
 - Aufwärts in die violette **Cash Run**-Rampe schießen: 2.500 Punkte mal Multiplikator.
 - Slingshots und Kicker bringen zusätzliche Punkte. Zu viele schnelle Nudges sperren die Flipper für vier Sekunden: **TILT**.
 - Ein kurzer Wisch nach oben auf dem Spielfeld stößt den Tisch an; derselbe Finger kann pro Wisch nur einen Stoß auslösen. Der Tisch macht dabei einen kurzen Ruck nach oben. Kleine Fingerbewegungen und Wischen im Aufzugbereich zählen nicht. Drei schnelle Stöße lösen Tilt aus. Bei reduzierter Bewegung entfällt der visuelle Ruck.
+- Die Gold-Targets sind ab drei Bällen auf dem Tisch gesperrt und abgedunkelt. Bei höchstens zwei Bällen werden sie automatisch wieder aktiv; gesperrte Treffer geben keine Punkte und lösen keinen weiteren Gold Rush aus.
 - Gold Rush, Cash Run, Combo-Meilensteine, Ball Save und Tilt bekommen eigene kurze Tischanzeigen mit farbigen Konturen, Lichtzug und einem schnellen Auftritt. Wichtige Ereignisse haben Vorrang; die Kugel bleibt vor den Anzeigen sichtbar. Schrift und Leuchten werden als begrenzte Grafiken vorbereitet und wiederverwendet. Reduzierte Bewegung schaltet die zusätzlichen Bewegungs- und Glanzeffekte aus.
 - Der Highscore bleibt im lokalen Browserspeicher erhalten, sofern dieser verfügbar ist.
 

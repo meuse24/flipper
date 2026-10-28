@@ -1768,7 +1768,7 @@
               <div>
                 <b>GOLD RUSH</b>
                 <div class="tiny">
-                  Drop all 3 gold targets.<br />Unleash three-ball chaos.
+                  Drop all 3 gold targets.<br />Targets pause at 3+ balls.
                 </div>
               </div>
             </div>
@@ -2011,6 +2011,7 @@
           startingBalls: 3,
           launchSaveSeconds: 8,
           multiballSaveSeconds: 10,
+          goldTargetsDisableAtBalls: 3,
           comboWindow: 2,
           maxCombo: 10,
           comboBonus: 25,
@@ -2794,7 +2795,12 @@
           }
           return true;
         }
+        function goldTargetsEnabled() {
+          // Count ramp and saved balls too: they are still part of the live multiball.
+          return state.balls.length < RULES.goldTargetsDisableAtBalls;
+        }
         function multiball() {
+          if (!goldTargetsEnabled()) return;
           state.mult = Math.min(RULES.maxMultiplier, state.mult + 1);
           for (let i = 0; i < 2; i++) {
             const b = spawn(240 + i * 45, 170, true);
@@ -2914,6 +2920,8 @@
                 { restitution: 0.9 },
               )
             ) {
+              // Locked targets remain solid rubber but award no hits or points.
+              if (!goldTargetsEnabled()) continue;
               t.hit = true;
               points(SCORING.target, t.x + 15, t.y);
               sparks(t.x, t.y, C.gold);
@@ -3445,7 +3453,7 @@
           }
           const targetKey = targets.reduce(
             (key, target, index) => key | (Number(target.hit) << index),
-            0,
+            goldTargetsEnabled() ? 0 : 8,
           );
           if (renderCache.targetKey !== targetKey || !renderCache.targets) {
             renderCache.targets = makeRenderLayer(drawTargets);
@@ -3587,16 +3595,18 @@
           context.restore();
         }
         function drawTargets(context = ctx) {
+          const enabled = goldTargetsEnabled();
           for (const t of targets) {
+            const dimmed = t.hit || !enabled;
             context.save();
             context.translate(t.x, t.y);
             context.rotate(-0.13);
-            context.fillStyle = t.hit ? "#282c1e" : C.gold;
+            context.fillStyle = dimmed ? "#282c1e" : C.gold;
             context.shadowColor = C.gold;
-            context.shadowBlur = t.hit ? 0 : 11;
+            context.shadowBlur = dimmed ? 0 : 11;
             context.fillRect(-9, -15, 18, 30);
             context.shadowBlur = 0;
-            context.strokeStyle = t.hit ? "#596144" : "#fff0b0";
+            context.strokeStyle = dimmed ? "#596144" : "#fff0b0";
             context.strokeRect(-9, -15, 18, 30);
             text(
               context,
@@ -3604,7 +3614,7 @@
               0,
               5,
               15,
-              t.hit ? "#67714d" : "#3a2b0b",
+              dimmed ? "#67714d" : "#3a2b0b",
               "900",
             );
             context.restore();
@@ -4091,6 +4101,7 @@
               angle: +f.angle.toFixed(2),
               held: input[f.side],
             })),
+            goldTargetsEnabled: goldTargetsEnabled(),
             targets: targets.map((t) => ({ x: t.x, y: t.y, down: t.hit })),
             ramp: { mouth: [366, 442, 417, 480], hits: state.rampHits },
             bumpers: bumpers.map((o) => ({ x: o.x, y: o.y, r: o.r })),

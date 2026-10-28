@@ -152,6 +152,7 @@ for (const suite of [
   "smoke",
   "touch-nudge",
   "callouts",
+  "gold-targets",
   "shooter-gate",
   "natural-drain",
   "responsive",

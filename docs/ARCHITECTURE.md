@@ -42,6 +42,12 @@ Die Einwegklappe ist ein schwenkendes Kollisionssegment mit derselben Lage und D
 
 Die unteren Führungsschienen schließen tangential an das dickere Gummi der Flipper-Drehpunkte an. Ihre symmetrische Neigung vermeidet die früheren Mulden und eine kleine aufwärts gerichtete Kante am Übergang. Die Slingshot-Spitzen enden acht Pixel höher, damit eine volle Kugelbreite zur Führung frei bleibt. `tests/natural-drain.mjs` prüft beide eingefangenen Ruhelagen und 22 langsame Anläufe ohne Anstoßen oder Flipper-Eingabe.
 
+## Gold Rush und Kugelzahl
+
+`RULES.goldTargetsDisableAtBalls` legt die Sperrgrenze auf drei Kugeln fest. `goldTargetsEnabled()` zählt sämtliche Einträge in `state.balls`, einschließlich Rampenfahrt und Ball Save. `resolveTargets()` erhält die physische Kollision mit aufgestellten Zielen auch während der Sperre, überspringt dann aber Trefferstatus, Punkte, Effekte und Ton. `multiball()` prüft die Freigabe zusätzlich vor dem Erzeugen weiterer Kugeln. Nach einem Drain ergibt sich die Freigabe unmittelbar aus der verbleibenden Kugelzahl; ein separater Timer ist nicht nötig.
+
+Der Ziel-Layer verwendet zusätzlich zu den drei Trefferbits ein Sperrbit. Dadurch wird er nur beim Wechsel der Freigabe oder des Trefferzustands neu gezeichnet. Gesperrte Ziele erscheinen ohne Goldleuchten. `render_game_to_text()` liefert `goldTargetsEnabled` für die beobachtbare Spielregel. `tests/gold-targets.mjs` prüft Grenze, Rückprall, Belohnung, Drain-Freigabe, erneuten Gold Rush und Cache-Wechsel.
+
 ## Eingebettete Medien
 
 `embeddedAssets` hält das M24-Kopflogo und das vom Benutzer bereitgestellte Gassenmotiv jeweils einmal. Beide Embleme teilen dieselbe Bildquelle. Das Ghettoblaster-SVG liegt einmal im HTML-Template und wird für Menü, Kopfzeile und Radio-Panel instanziiert.
