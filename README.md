@@ -26,13 +26,15 @@ Anschließend **[http://127.0.0.1:8090](http://127.0.0.1:8090)** öffnen. Für d
 | ------------------------ | -------------------------------------------- | -------------------------------------------------- |
 | Linker / rechter Flipper | Linke / rechte Shift-Taste, ← / → oder A / D | Linke / rechte Spielfeldhälfte oder Flipper-Tasten |
 | Kugel starten            | Leertaste oder ↓ halten, dann loslassen      | **HOLD TO LAUNCH** halten und loslassen            |
-| Tisch anstoßen           | N                                            | —                                                  |
+| Tisch anstoßen           | N                                            | Kurz auf dem Spielfeld nach oben wischen           |
 | Pause / fortsetzen       | P                                            | Pause-Taste oben                                   |
 | Vollbild umschalten      | F                                            | Vollbild-Taste oben                                |
 | Start / Neustart         | Enter oder Startknopf                        | Startknopf                                         |
 | Musik umschalten         | Ghettoblaster anklicken                      | Ghettoblaster antippen                             |
 
 Der Ghettoblaster schaltet zwischen **Gesang → Instrumental → Aus**. Seine Lautsprecher pulsieren anhand des tatsächlichen Abspielzeitpunkts. **FX ON/OFF** steuert die synthetischen Spieleffekte unabhängig von der Musik. Audio startet nach einer Benutzeraktion. Android kann Vollbild mit der Zurück-Geste bzw. Zurück-Taste beenden; am Desktop funktioniert auch Escape.
+
+Der Soundtrack besteht aus **BADBOY — Rule the Block** (Gesang, 2:25) und **BADBOY — Bronx Bass Pressure** (Instrumental, 1:38). Beide vom Projektinhaber bereitgestellten WAV-Dateien wurden als Mono-MP3 mit 96 kbit/s und 44,1 kHz komprimiert; zusammen benötigen sie etwa 2,9 MB. Die technischen Dateinamen `lucky-seven-song.mp3` und `lucky-seven-theme.mp3` bleiben erhalten. Die Bassanimation ist auf die neuen Tracks abgestimmt; beide werden wiederholt abgespielt.
 
 Beim ersten echten Klick versucht das Spiel, Vollbild zu aktivieren, und startet den Gesangstrack. Browser ohne nutzbares Vollbild bleiben im Fenster. Ein erster Klick auf den Ghettoblaster startet ebenfalls zunächst Gesang; weitere Klicks schalten normal weiter. Die Oberfläche trägt `translate="no"`, `notranslate` und das Google-Meta-Tag, damit unterstützende Browser keine automatische Übersetzung anbieten.
 
@@ -41,10 +43,13 @@ Die **FPS**-Taste oben schaltet die Bildratenanzeige am Spielfeldrand ein oder a
 ## Spielregeln
 
 - Drei Kugeln pro Partie. Die Startphase schützt acht Sekunden lang vor einem verlorenen Ball.
+- Die Abschussbahn führt über einen festen Schienenbogen durch eine bewegliche Metallklappe ins Spielfeld. Die Klappe öffnet für den Abschuss, lässt einen kurzen Lichtimpuls aufleuchten und schließt mit einem leisen Klack. Geschlossen blockiert sie Schüsse zurück in die Abschussbahn.
 - Die drei 808-Speaker bringen Respect Points. Schnelle Treffer bilden Combos.
 - Alle drei goldenen Ziele abräumen: drei Kugeln gleichzeitig und ein höherer Bling-Multiplikator.
 - Aufwärts in die violette **Cash Run**-Rampe schießen: 2.500 Punkte mal Multiplikator.
 - Slingshots und Kicker bringen zusätzliche Punkte. Zu viele schnelle Nudges sperren die Flipper für vier Sekunden: **TILT**.
+- Ein kurzer Wisch nach oben auf dem Spielfeld stößt den Tisch an; derselbe Finger kann pro Wisch nur einen Stoß auslösen. Der Tisch macht dabei einen kurzen Ruck nach oben. Kleine Fingerbewegungen und Wischen im Aufzugbereich zählen nicht. Drei schnelle Stöße lösen Tilt aus. Bei reduzierter Bewegung entfällt der visuelle Ruck.
+- Gold Rush, Cash Run, Combo-Meilensteine, Ball Save und Tilt bekommen eigene kurze Tischanzeigen mit farbigen Konturen, Lichtzug und einem schnellen Auftritt. Wichtige Ereignisse haben Vorrang; die Kugel bleibt vor den Anzeigen sichtbar. Schrift und Leuchten werden als begrenzte Grafiken vorbereitet und wiederverwendet. Reduzierte Bewegung schaltet die zusätzlichen Bewegungs- und Glanzeffekte aus.
 - Der Highscore bleibt im lokalen Browserspeicher erhalten, sofern dieser verfügbar ist.
 
 ## Fenster, Vollbild und Ausrichtung
@@ -96,7 +101,7 @@ Die lokale, von Git ausgeschlossene `ftp.txt` enthält die öffentliche HTTPS-Sp
 
 ## Technik und Tests
 
-Vanilla JavaScript, Canvas und Web Audio ohne Framework oder Produktionsabhängigkeiten. Die eigene Physik läuft mit 240 festen Teilschritten pro Sekunde und verarbeitet bewegte Flipper, Reibung, Spin und Kugelkollisionen. Der Tisch kombiniert das bereitgestellte Gassenmotiv mit prozedural gezeichneten Spielelementen; Bronx-Seitenhintergrund, M24-Silhouette, Musik und PWA-Gestaltung stammen aus dem M24-Slotmachine-Projekt.
+Vanilla JavaScript, Canvas und Web Audio ohne Framework oder Produktionsabhängigkeiten. Die eigene Physik läuft mit 240 festen Teilschritten pro Sekunde und verarbeitet bewegte Flipper, Reibung, Spin und Kugelkollisionen. Der Tisch kombiniert das bereitgestellte Gassenmotiv mit prozedural gezeichneten Spielelementen; Bronx-Seitenhintergrund, M24-Silhouette und PWA-Gestaltung stammen aus dem M24-Slotmachine-Projekt. Die beiden BADBOY-Musikstücke wurden vom Projektinhaber für den Flipper bereitgestellt.
 
 Automatisierte Prüfungen (jede Browser-Suite startet ihren eigenen Server):
 
@@ -109,6 +114,9 @@ npm run test:rendering
 npm run test:startup
 npm run test:audio
 npm run test:drain
+npm run test:touch
+npm run test:callouts
+npm run test:shooter
 npm run test:server
 npm run test:pwa
 npm run format:check

@@ -230,9 +230,28 @@
       .controls-row {
         display: flex;
         justify-content: space-between;
+        gap: 8px;
         font: 11px monospace;
         color: rgb(175, 180, 165);
         align-items: center;
+      }
+      .controls-row > span:first-child {
+        flex-shrink: 0;
+      }
+      .flipper-keys {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 5px;
+        min-width: 0;
+      }
+      .flipper-keys > kbd {
+        white-space: nowrap;
+      }
+      .arrow-keys {
+        display: inline-flex;
+        gap: 4px;
+        white-space: nowrap;
       }
       kbd {
         font: 10px monospace;
@@ -329,7 +348,7 @@
       }
       .overlay {
         position: absolute;
-        backdrop-filter: blur(4px);
+        backdrop-filter: blur(1.5px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -632,12 +651,13 @@
         right: 9%;
       }
       .overlay-inner > .m24-crest {
+        --menu-crest-size: clamp(112px, 22vh, 220px);
         margin-top: 0px;
         margin-right: auto;
         margin-left: auto;
       }
       .overlay {
-        background: rgba(9, 13, 9, 0.83);
+        background: rgba(9, 13, 9, 0.48);
       }
       .panel {
         background: linear-gradient(
@@ -952,11 +972,14 @@
         margin: 0px auto 15px;
       }
       .overlay-inner > .m24-crest {
-        width: 66px;
+        width: var(--menu-crest-size);
         margin-bottom: 12px;
       }
       .overlay-inner > .m24-crest .crest-name {
-        font-size: 18px;
+        font-size: calc(var(--menu-crest-size) * 0.27);
+      }
+      .overlay-inner > .m24-crest .crest-star {
+        font-size: calc(var(--menu-crest-size) * 0.14);
       }
       .overlay h2 {
         font-size: clamp(32px, 5vh, 60px);
@@ -1130,9 +1153,6 @@
         .overlay-inner > .m24-crest {
           margin-bottom: 8px;
         }
-        .overlay-inner > .m24-crest .crest-name {
-          font-size: 15px;
-        }
         .menu-blaster {
           width: 100px;
           margin-bottom: 10px;
@@ -1293,7 +1313,7 @@
           position: fixed;
           inset: 49px 13px 12px;
           z-index: 7;
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(2px);
         }
         .overlay-inner {
           height: 100%;
@@ -1308,7 +1328,7 @@
         }
         .overlay-inner > .m24-crest {
           grid-area: 1 / 1 / 3;
-          width: 66px;
+          --menu-crest-size: min(135px, 34vh);
           margin: 0px auto;
         }
         .menu-blaster {
@@ -1377,6 +1397,9 @@
         overflow: visible;
         flex-shrink: 0;
         transform-origin: center center;
+        text-shadow:
+          0 2px 4px #000,
+          0 0 12px #000;
       }
       .overlay.pwa-notice .overlay-inner {
         max-height: none;
@@ -1407,7 +1430,7 @@
           width: 120px;
         }
         .overlay-inner > .m24-crest {
-          width: 58px;
+          --menu-crest-size: clamp(120px, 24vh, 220px);
         }
         .overlay #install-app {
           margin-top: 10px;
@@ -1501,6 +1524,11 @@
         }
         .touch-controls {
           margin: 0;
+        }
+      }
+      @media (max-width: 380px) and (orientation: portrait) {
+        .brand small {
+          display: none;
         }
       }
     </style>
@@ -1615,7 +1643,7 @@
               id="table"
               width="1040"
               height="1640"
-              aria-label="Pinball table. Left and right Shift or arrow keys control flippers. Hold and release Space to launch."
+              aria-label="Pinball table. Left and right Shift or arrow keys control flippers. Hold and release Space to launch. Swipe up on the table or press N to nudge."
               tabindex="0"
             ></canvas>
             <div class="overlay" id="overlay">
@@ -1656,7 +1684,7 @@
                 <button class="primary" id="start-btn">LET’S PLAY ↗</button>
                 <div class="tiny">
                   L / R SHIFT OR ← → FLIPPERS · HOLD SPACE TO LAUNCH<br />P
-                  PAUSE · N NUDGE · F FULLSCREEN
+                  PAUSE · N / SWIPE ↑ NUDGE · F FULLSCREEN
                 </div>
                 <div class="pwa-actions">
                   <button id="install-app" type="button" hidden>
@@ -1750,10 +1778,15 @@
             <h2>KNOW YOUR MOVES</h2>
             <div class="controls-row">
               <span>Flippers</span
-              ><span><kbd>SHIFT L / R</kbd> <kbd>←</kbd> <kbd>→</kbd></span>
+              ><span class="flipper-keys"
+                ><kbd>SHIFT L / R</kbd
+                ><span class="arrow-keys"><kbd>←</kbd><kbd>→</kbd></span></span
+              >
             </div>
             <div class="controls-row"><span>Launch</span><kbd>SPACE</kbd></div>
-            <div class="controls-row"><span>Nudge</span><kbd>N</kbd></div>
+            <div class="controls-row">
+              <span>Nudge</span><span><kbd>N</kbd> / SWIPE ↑</span>
+            </div>
             <div class="controls-row"><span>Pause</span><kbd>P</kbd></div>
             <div class="tiny">
               Too much nudge? That’s a tilt.<br />Keep it cool for 4 seconds.
@@ -1986,10 +2019,37 @@
         const LAUNCHER = Object.freeze({
           x: 470,
           y: 733,
-          minSpeed: 870,
-          speedRange: 430,
+          minSpeed: 1050,
+          speedRange: 300,
           vx: -8,
         });
+        const SHOOTER = Object.freeze({
+          cx: 350,
+          cy: 180,
+          outerRadius: 138,
+          innerRadius: 101,
+          gateStart: (-72 * Math.PI) / 180,
+          gateEnd: (-28 * Math.PI) / 180,
+          opening: 1.12,
+        });
+        const gateHinge = {
+          x: SHOOTER.cx + SHOOTER.innerRadius * Math.cos(SHOOTER.gateStart),
+          y: SHOOTER.cy + SHOOTER.innerRadius * Math.sin(SHOOTER.gateStart),
+        };
+        const gateTip = {
+          x: SHOOTER.cx + SHOOTER.innerRadius * Math.cos(SHOOTER.gateEnd),
+          y: SHOOTER.cy + SHOOTER.innerRadius * Math.sin(SHOOTER.gateEnd),
+        };
+        const shooterGate = {
+          x: gateHinge.x,
+          y: gateHinge.y,
+          length: Math.hypot(gateTip.x - gateHinge.x, gateTip.y - gateHinge.y),
+          rest: Math.atan2(gateTip.y - gateHinge.y, gateTip.x - gateHinge.x),
+          angle: 0,
+          hold: 0,
+          flash: 0,
+          passes: 0,
+        };
         const SCORING = Object.freeze({
           bumper: 250,
           sling: 75,
@@ -2005,6 +2065,52 @@
           flashSteps: 12,
           flashSeconds: 0.16,
           glowPadding: 50,
+          popupLimit: 12,
+        });
+        // One prioritized show, not a queue of stale celebrations during multiball.
+        const CALLOUTS = Object.freeze({
+          info: {
+            color: "#bcff37",
+            tag: "M24 · STREET SIGNAL",
+            priority: 10,
+            duration: 2.2,
+          },
+          combo: {
+            color: "#63f4db",
+            tag: "STACK YOUR RESPECT",
+            priority: 40,
+            duration: 1.3,
+          },
+          cash: {
+            color: "#b28aff",
+            tag: "CHASE THE BAG",
+            priority: 65,
+            duration: 1.8,
+          },
+          multiball: {
+            color: "#efc16b",
+            tag: "THREE BALLS. ONE KING.",
+            priority: 90,
+            duration: 2.6,
+          },
+          save: {
+            color: "#bcff37",
+            tag: "STREET INSURANCE",
+            priority: 95,
+            duration: 1.9,
+          },
+          warning: {
+            color: "#ff9c50",
+            tag: "WATCH THE HEAT",
+            priority: 60,
+            duration: 1.15,
+          },
+          tilt: {
+            color: "#ff4a9e",
+            tag: "SYSTEM LOCKDOWN",
+            priority: 100,
+            duration: 4,
+          },
         });
         // Explicit opt-in: ordinary pages never expose mutable test scenarios.
         const TEST_MODE =
@@ -2116,12 +2222,14 @@
             combo: 0,
             lastHit: -10,
             shake: 0,
+            nudgeTime: 0,
             save: 0,
             nudge: 0,
             tilt: 0,
             rampHits: 0,
             message: "WELCOME TO THE BLOCK",
             messageUntil: 0,
+            callout: null,
             beat: 0,
           },
           input = { left: false, right: false };
@@ -2234,7 +2342,7 @@
           },
         ];
 
-        /** @typedef {{ax:number, ay:number, bx:number, by:number, r:number, restitution?:number, slingSide?:number}} Segment */
+        /** @typedef {{ax:number, ay:number, bx:number, by:number, r:number, restitution?:number, friction?:number, slingSide?:number}} Segment */
         /** @typedef {{id:number,x:number,y:number,vx:number,vy:number,r:number,spin:number,rotation:number,launched:boolean,entered:boolean,dead:boolean,trail:Array,ramp:number,rampT:number,cool:number,kicker:number}} Ball */
         const MATERIALS = Object.freeze({
           steel: {
@@ -2253,7 +2361,7 @@
         function rail(
           id,
           coordinates,
-          { material = "steel", slingSide = 0, shooterGate = false } = {},
+          { material = "steel", slingSide = 0, restitution, friction } = {},
         ) {
           const [ax, ay, bx, by] = coordinates;
           const surface = MATERIALS[material];
@@ -2264,64 +2372,121 @@
             bx,
             by,
             r: surface.radius,
-            restitution: surface.restitution,
+            restitution: restitution ?? surface.restitution,
             stroke: surface.stroke,
             highlight: surface.highlight,
             slingSide,
-            shooterGate,
+            friction,
           };
         }
-        // Collision order is retained for shared corners. IDs/flags survive future insertions.
+        function arcRails(id, cx, cy, radius, from, to, pieces, options = {}) {
+          return Array.from({ length: pieces }, (_, i) => {
+            const a = from + ((to - from) * i) / pieces,
+              b = from + ((to - from) * (i + 1)) / pieces;
+            return rail(
+              id + "-" + i,
+              [
+                cx + Math.cos(a) * radius,
+                cy + Math.sin(a) * radius,
+                cx + Math.cos(b) * radius,
+                cy + Math.sin(b) * radius,
+              ],
+              options,
+            );
+          });
+        }
+        // Adjacent capsule segments share endpoints so curved guides stay solid.
         // Inlane entrances are deliberately open: no gap may pinch an 8px-radius ball.
         const rails = [
           rail("left-wall", [36, 655, 29, 185]),
-          rail("left-shoulder", [29, 185, 50, 106]),
-          rail("left-arch", [50, 106, 110, 59]),
-          rail("shooter-inner-roof", [110, 59, 365, 59], { shooterGate: true }),
-          rail("shooter-inner-bend", [365, 59, 427, 104], {
-            shooterGate: true,
+          rail("left-shoulder", [29, 185, 32, 120]),
+          ...arcRails("left-arch", 110, 120, 78, -Math.PI, -Math.PI / 2, 10),
+          rail("upper-roof", [110, 42, 350, 42]),
+          // This stop and the gate enclose only the curved shooter lane.
+          // The rest of the upper playfield has no decorative pass-through rail.
+          rail("shooter-end-stop", [350, 42, gateHinge.x, gateHinge.y], {
+            restitution: 0.15,
+            friction: 0.0025,
           }),
-          rail("shooter-inner-exit", [427, 104, 451, 172], {
-            shooterGate: true,
-          }),
-          rail("right-wall", [451, 172, 451, 672]),
+          ...arcRails(
+            "shooter-inner",
+            SHOOTER.cx,
+            SHOOTER.cy,
+            SHOOTER.innerRadius,
+            SHOOTER.gateEnd,
+            0,
+            5,
+            { restitution: 0.15, friction: 0.0025 },
+          ),
+          rail("right-wall", [451, 180, 451, 672]),
           rail("right-outlane-upper", [451, 672, 411, 752]),
           rail("right-outlane-lower", [411, 752, 370, 797]),
           rail("left-outlane-upper", [36, 655, 77, 754]),
           rail("left-outlane-lower", [77, 754, 126, 800]),
           rail("shooter-outer-wall", [488, 762, 488, 180]),
-          rail("shooter-outer-bend", [488, 180, 476, 112]),
-          rail("shooter-outer-arch", [476, 112, 434, 57]),
-          rail("shooter-outer-roof", [434, 57, 365, 28]),
-          rail("upper-roof", [365, 28, 113, 28]),
-          rail("upper-left-arch", [113, 28, 49, 61]),
+          ...arcRails(
+            "shooter-outer",
+            SHOOTER.cx,
+            SHOOTER.cy,
+            SHOOTER.outerRadius,
+            0,
+            -Math.PI / 2,
+            16,
+            { restitution: 0.15, friction: 0.0025 },
+          ),
           rail("left-sling-back", [80, 536, 113, 630], {
             material: "slingRubber",
           }),
-          rail("left-sling-base", [113, 630, 164, 667], {
+          rail("left-sling-base", [113, 630, 164, 659], {
             material: "slingRubber",
           }),
-          rail("left-sling-face", [164, 667, 80, 536], {
+          rail("left-sling-face", [164, 659, 80, 536], {
             material: "slingRubber",
             slingSide: 1,
           }),
           rail("right-sling-back", [433, 536, 400, 630], {
             material: "slingRubber",
           }),
-          rail("right-sling-base", [400, 630, 350, 667], {
+          rail("right-sling-base", [400, 630, 350, 659], {
             material: "slingRubber",
           }),
-          rail("right-sling-face", [350, 667, 433, 536], {
+          rail("right-sling-face", [350, 659, 433, 536], {
             material: "slingRubber",
             slingSide: -1,
           }),
-          rail("left-return-guide", [80, 663, 145, 706]),
-          rail("right-return-guide", [416, 663, 371, 704]),
+          // Meet the thicker pivot rubber tangentially, with no uphill lip.
+          // Sling tips stop 8 px higher to preserve a full ball-width passage.
+          rail("left-return-guide", [100, 663, 168.7, 697.64]),
+          rail("right-return-guide", [416, 663, 347.3, 697.64]),
           rail("plunger-stop", [452, 762, 488, 762]),
         ];
-        function announce(t) {
+        function showCallout(kind, title, detail) {
+          const style = CALLOUTS[kind],
+            current = state.callout;
+          if (
+            current &&
+            current.until > state.time &&
+            CALLOUTS[current.kind].priority > style.priority &&
+            (current.kind === "tilt" || state.time - current.start < 1.1)
+          )
+            return;
+          state.callout = {
+            kind,
+            title,
+            detail,
+            start: state.time,
+            until: state.time + style.duration,
+          };
+        }
+        function announce(
+          t,
+          kind = "info",
+          title = t,
+          detail = "M24 UNDERGROUND · RULE THE BLOCK",
+        ) {
           state.message = t;
           state.messageUntil = state.time + 3;
+          showCallout(kind, title, detail);
           $("status").textContent = t;
         }
         let nextBallId = 0;
@@ -2372,7 +2537,12 @@
           resetSession();
           $("overlay").hidden = true;
           canvas.focus({ preventScroll: true });
-          announce("HOLD SPACE. MAKE AN ENTRANCE.");
+          announce(
+            "HOLD SPACE. MAKE AN ENTRANCE.",
+            "info",
+            "MAKE AN ENTRANCE",
+            "HOLD TO LAUNCH · RELEASE THE HEAT",
+          );
           sync();
         }
         // Reset game-owned state; the simulation clock remains monotonic across runs.
@@ -2394,11 +2564,22 @@
             tilt: 0,
             rampHits: 0,
           });
+          state.nudgeTime = 0;
+          state.shake = 0;
+          state.callout = null;
+          Object.assign(shooterGate, {
+            angle: 0,
+            hold: 0,
+            flash: 0,
+            passes: 0,
+          });
           for (const t of targets) t.hit = false;
           spawn();
         }
         function points(n, x, y, label) {
           if (state.tilt > 0) return;
+          const previousCombo =
+            state.time - state.lastHit < RULES.comboWindow ? state.combo : 0;
           state.combo =
             state.time - state.lastHit < RULES.comboWindow
               ? Math.min(RULES.maxCombo, state.combo + 1)
@@ -2414,7 +2595,19 @@
             text: label || "+" + p,
             life: 1.2,
             color: C.acid,
+            total: 1.2,
           });
+          if (state.floaters.length > RENDERING.popupLimit)
+            state.floaters.shift();
+          if (
+            state.combo > previousCombo &&
+            [3, 5, 8, 10].includes(state.combo)
+          )
+            showCallout(
+              "combo",
+              "RESPECT ×" + state.combo,
+              state.combo + "-HIT COMBO · KEEP IT ROLLING",
+            );
           sync();
         }
         function sparks(x, y, color, count = 14) {
@@ -2447,7 +2640,12 @@
             b.vx = LAUNCHER.vx;
             state.save = RULES.launchSaveSeconds;
             audio.tone(100, 0.35, "sawtooth", 0.17, 650);
-            announce("BALL SAVE ACTIVE · 8 SECONDS");
+            announce(
+              "BALL SAVE ACTIVE · 8 SECONDS",
+              "info",
+              "BALL SAVE ACTIVE",
+              "8 SECONDS · GO ALL IN",
+            );
           }
           state.charge = 0;
         }
@@ -2500,12 +2698,28 @@
               b.vy -= 125;
               b.vx += (physicsRandom() - 0.5) * 130;
             }
-          state.shake = 7;
+          state.nudgeTime = 0.22;
           audio.noise(0.12);
           if (state.nudge > 3) {
             state.tilt = 4;
-            announce("TILT! FLIPPERS LOCKED · COOL OFF");
-          } else announce("EASY NOW · NUDGE WARNING");
+            announce(
+              "TILT! FLIPPERS LOCKED · COOL OFF",
+              "tilt",
+              "TILT!",
+              "FLIPPERS LOCKED · COOL OFF FOR 4 SECONDS",
+            );
+          } else
+            announce(
+              "EASY NOW · NUDGE WARNING",
+              "warning",
+              "EASY NOW",
+              "NUDGE WARNING · KEEP IT COOL",
+            );
+        }
+        function nudgeOffsetY() {
+          return reduced
+            ? 0
+            : -12 * Math.sin((Math.PI * state.nudgeTime) / 0.22);
         }
         /* Moving-surface impulses use angular velocity crossed with the contact radius.
    Tangential friction exchanges translational velocity and ball spin. */
@@ -2567,8 +2781,9 @@
             b.vx += impulse * nx;
             b.vy += impulse * ny;
             const tangent = (b.vx - sx) * -ny + (b.vy - sy) * nx - b.spin * b.r;
-            b.vx += ny * tangent * PHYSICS.tangentialFriction;
-            b.vy -= nx * tangent * PHYSICS.tangentialFriction;
+            const friction = segment.friction ?? PHYSICS.tangentialFriction;
+            b.vx += ny * tangent * friction;
+            b.vy -= nx * tangent * friction;
             b.spin += tangent * PHYSICS.spinTransfer;
             if (kick) {
               b.cool = PHYSICS.slingCooldown;
@@ -2588,7 +2803,12 @@
           }
           state.save = RULES.multiballSaveSeconds;
           points(SCORING.multiball, 260, 200, "GOLD RUSH!");
-          announce("GOLD RUSH · MULTIBALL · ×" + state.mult);
+          announce(
+            "GOLD RUSH · MULTIBALL · ×" + state.mult,
+            "multiball",
+            "GOLD RUSH",
+            "MULTIBALL LIVE · BLING MULTIPLIER ×" + state.mult,
+          );
           audio.scratch();
           state.shake = 12;
           for (const t of targets) t.hit = false;
@@ -2615,6 +2835,8 @@
           state.nudge = Math.max(0, state.nudge - dt * 0.22);
           state.tilt = Math.max(0, state.tilt - dt);
           state.shake *= Math.exp(-12 * dt);
+          state.nudgeTime = Math.max(0, state.nudgeTime - dt);
+          updateShooterGate(dt);
           if (state.charging)
             state.charge = Math.min(1, state.charge + dt * 0.75);
         }
@@ -2646,10 +2868,6 @@
           }
         }
         function integrateBall(b, dt) {
-          if (!b.entered && b.y < 174) {
-            b.vx -= 1250 * dt;
-            b.vy -= 80 * dt;
-          }
           b.vy += PHYSICS.gravity * dt;
           b.vx *= Math.exp(-PHYSICS.drag * dt);
           b.vy *= Math.exp(-PHYSICS.drag * dt);
@@ -2718,7 +2936,12 @@
             state.rampHits++;
             points(SCORING.ramp, 385, 450, "CASH RUN +" + 2500 * state.mult);
             audio.scratch();
-            announce("CHASE THE BAG · RAMP BONUS");
+            announce(
+              "CHASE THE BAG · RAMP BONUS",
+              "cash",
+              "CASH RUN",
+              "+" + SCORING.ramp * state.mult + " RESPECT · RAMP BONUS",
+            );
           }
           if (b.kicker <= 0 && Math.hypot(b.x - 263, b.y - 176) < 23) {
             b.x = 263;
@@ -2780,14 +3003,24 @@
           if (dead.length && state.balls.length === 0) {
             if (state.save > 0) {
               spawn();
-              announce("BALL SAVED · LAUNCH AGAIN");
+              announce(
+                "BALL SAVED · LAUNCH AGAIN",
+                "save",
+                "BALL SAVED",
+                "STILL IN THE GAME · LAUNCH AGAIN",
+              );
             } else {
               state.lives--;
               state.mult = 1;
               state.combo = 0;
               if (state.lives > 0) {
                 spawn();
-                announce("SHAKE IT OFF · NEXT BALL");
+                announce(
+                  "SHAKE IT OFF · NEXT BALL",
+                  "info",
+                  "RUN IT BACK",
+                  "NEXT BALL · THE BLOCK IS WAITING",
+                );
               } else endGame();
             }
             sync();
@@ -2814,17 +3047,72 @@
               audio.tone(55, 0.18, "sine", 0.12, 35);
           }
         }
+        function updateShooterGate(dt) {
+          shooterGate.hold = Math.max(0, shooterGate.hold - dt);
+          shooterGate.flash = Math.max(0, shooterGate.flash - dt);
+          const wasOpen = shooterGate.angle > 0,
+            target = shooterGate.hold > 0 ? SHOOTER.opening : 0;
+          shooterGate.angle += clamp(
+            target - shooterGate.angle,
+            -8 * dt,
+            24 * dt,
+          );
+          if (wasOpen && shooterGate.angle === 0) {
+            audio.tone(1400, 0.035, "square", 0.045, 360);
+            audio.noise(0.025, 0.05);
+          }
+        }
+        function resolveShooterGate(b) {
+          const dx = b.x - shooterGate.x,
+            dy = b.y - shooterGate.y,
+            cos = Math.cos(shooterGate.rest),
+            sin = Math.sin(shooterGate.rest),
+            along = (dx * cos + dy * sin) / shooterGate.length,
+            outside = dx * sin - dy * cos,
+            approaching = b.vx * sin - b.vy * cos;
+          // An approaching shooter ball pushes the flap into the playfield.
+          // Its actual rotated segment remains collidable from both sides.
+          if (
+            !b.entered &&
+            along > -0.2 &&
+            along < 1.2 &&
+            outside > 0 &&
+            outside < 64 &&
+            approaching < -15
+          )
+            shooterGate.hold = 0.18;
+          if (
+            b.entered &&
+            Math.abs(outside) < 18 &&
+            along > 0 &&
+            along < 1 &&
+            shooterGate.angle > 0.2
+          )
+            shooterGate.hold = Math.max(shooterGate.hold, 0.05);
+          const angle = shooterGate.rest + shooterGate.angle;
+          collide(b, {
+            ax: shooterGate.x,
+            ay: shooterGate.y,
+            bx: shooterGate.x + Math.cos(angle) * shooterGate.length,
+            by: shooterGate.y + Math.sin(angle) * shooterGate.length,
+            r: 4,
+            restitution: 0.15,
+            friction: 0.0025,
+          });
+          const passed =
+            (b.x - shooterGate.x) * sin - (b.y - shooterGate.y) * cos;
+          if (!b.entered && along > 0 && along < 1 && passed < -b.r) {
+            b.entered = true;
+            shooterGate.passes++;
+            shooterGate.flash = 0.24;
+          }
+        }
         function resolveTableContacts(b) {
           for (const rail of rails) {
-            if (!b.entered && rail.shooterGate) continue;
             collide(b, rail);
           }
-          // Once below the apex in the playfield, the shooter gate closes behind the ball.
-          if (b.x < 420 && b.y > 155 && b.y < 680) b.entered = true;
-          if (b.entered && b.x > 439 && b.y > 140 && b.y < 670) {
-            b.x = 439;
-            b.vx = -Math.abs(b.vx) * 0.8;
-          }
+          resolveShooterGate(b);
+          if (b.x < 430 && b.y > 180 && b.y < 680) b.entered = true;
           for (const f of flippers)
             collide(
               b,
@@ -2869,6 +3157,12 @@
           targets: null,
           targetKey: null,
           bumpers: new Map(),
+          callout: null,
+          calloutKey: null,
+          calloutBuilds: 0,
+          sheen: null,
+          popups: new Map(),
+          gate: null,
         };
         let renderDirty = true,
           renderedMode = null,
@@ -2879,6 +3173,10 @@
           renderCache.table = renderCache.inserts = renderCache.targets = null;
           renderCache.insertKey = renderCache.targetKey = null;
           renderCache.bumpers.clear();
+          renderCache.callout = renderCache.sheen = null;
+          renderCache.calloutKey = null;
+          renderCache.popups.clear();
+          renderCache.gate = null;
           renderDirty = true;
         }
         /** Each layer owns a context; painters never swap the live canvas context.
@@ -3156,6 +3454,7 @@
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           ctx.clearRect(0, 0, W, H);
           ctx.save();
+          ctx.translate(0, nudgeOffsetY());
           if (!reduced && state.shake > 0.1)
             ctx.translate(
               (visualRandom() - 0.5) * state.shake,
@@ -3179,8 +3478,10 @@
           drawRenderLayer(renderCache.targets);
           drawFlippers();
           drawPlunger();
-          drawBalls();
           drawEffects();
+          drawShooterGate();
+          // Never obscure the live ball with a celebration or score popup.
+          drawBalls();
           ctx.restore();
           if (renderedCharge !== state.charge) {
             $("power").style.width = state.charge * 100 + "%";
@@ -3190,17 +3491,72 @@
           renderDirty = false;
           renderedMode = state.mode;
         }
-        function drawRails(context = ctx) {
-          for (const r of rails) {
-            line(context, [r.ax, r.ay, r.bx, r.by], "#030603", r.r * 2 + 5);
-            line(context, [r.ax, r.ay, r.bx, r.by], r.stroke, r.r * 2);
-            line(
-              context,
-              [r.ax - 1, r.ay - 2, r.bx - 1, r.by - 2],
-              r.highlight,
-              2,
+        function drawShooterGate() {
+          if (!renderCache.gate)
+            renderCache.gate = makeRenderLayer(
+              (c) => {
+                const metal = c.createLinearGradient(0, -5, 0, 5);
+                metal.addColorStop(0, "#f4f5db");
+                metal.addColorStop(0.35, "#9aa993");
+                metal.addColorStop(0.5, "#d9e3c5");
+                metal.addColorStop(1, "#475545");
+                line(c, [0, 1, shooterGate.length, 1], "#030604", 12);
+                line(c, [0, 0, shooterGate.length, 0], metal, 7);
+                line(c, [5, -2, shooterGate.length - 5, -2], "#ffffffc0", 1);
+                for (const x of [0, shooterGate.length]) {
+                  c.fillStyle = "#121b13";
+                  c.beginPath();
+                  c.arc(x, 0, 3, 0, Math.PI * 2);
+                  c.fill();
+                  c.fillStyle = C.gold;
+                  c.beginPath();
+                  c.arc(x, 0, 1.5, 0, Math.PI * 2);
+                  c.fill();
+                }
+              },
+              -9,
+              -10,
+              shooterGate.length + 18,
+              20,
             );
+          ctx.save();
+          ctx.translate(shooterGate.x, shooterGate.y);
+          ctx.rotate(shooterGate.rest + shooterGate.angle);
+          if (!reduced && shooterGate.flash > 0) {
+            ctx.globalAlpha = (shooterGate.flash / 0.24) * 0.4;
+            line(ctx, [0, 0, shooterGate.length, 0], C.gold, 16);
+            ctx.globalAlpha = 1;
           }
+          drawRenderLayer(renderCache.gate);
+          ctx.restore();
+        }
+        function drawRails(context = ctx) {
+          // Adjacent physics capsules render as one smooth metal curve.
+          const paths = new Map();
+          for (const r of rails) {
+            const key = r.id.replace(/-\d+$/, "");
+            if (!paths.has(key)) paths.set(key, []);
+            paths.get(key).push(r);
+          }
+          context.save();
+          context.lineCap = context.lineJoin = "round";
+          for (const path of paths.values()) {
+            const r = path[0];
+            for (const [color, width, ox, oy] of [
+              ["#030603", r.r * 2 + 5, 0, 0],
+              [r.stroke, r.r * 2, 0, 0],
+              [r.highlight, 2, -1, -2],
+            ]) {
+              context.beginPath();
+              context.moveTo(r.ax + ox, r.ay + oy);
+              for (const segment of path)
+                context.lineTo(segment.bx + ox, segment.by + oy);
+              context.strokeStyle = color;
+              context.lineWidth = width;
+              context.stroke();
+            }
+          }
+          context.restore();
         }
         function drawInserts(context = ctx) {
           for (let i = 0; i < 5; i++) {
@@ -3340,6 +3696,206 @@
             ctx.restore();
           }
         }
+        function buildCalloutSprite(show) {
+          const { color, tag } = CALLOUTS[show.kind];
+          return makeRenderLayer(
+            (c) => {
+              const plate = new Path2D(
+                "M22 9H414L434 29V104L416 123H22L6 106V25Z",
+              );
+              const shade = c.createLinearGradient(0, 0, 440, 132);
+              shade.addColorStop(0, "#060d13f5");
+              shade.addColorStop(0.55, "#0a1116eb");
+              shade.addColorStop(1, color + "35");
+              c.fillStyle = shade;
+              c.fill(plate);
+              c.strokeStyle = color + "75";
+              c.lineWidth = 1;
+              c.stroke(plate);
+              c.save();
+              c.clip(plate);
+              c.globalAlpha = 0.12;
+              c.fillStyle = color;
+              // A few broad print strokes give the plate a street-poster texture.
+              for (let i = 0; i < 7; i++) {
+                c.beginPath();
+                c.moveTo(i * 82 - 100, 132);
+                c.lineTo(i * 82 + 8, 0);
+                c.lineTo(i * 82 + 28, 0);
+                c.lineTo(i * 82 - 80, 132);
+                c.fill();
+              }
+              c.restore();
+              c.fillStyle = color;
+              c.fillRect(28, 9, 76, 3);
+              c.fillRect(336, 120, 76, 3);
+              c.font = "bold 9px monospace";
+              c.textAlign = "center";
+              c.fillText(tag, 220, 29);
+              c.fillStyle = color + "85";
+              for (let i = 0; i < 5; i++) {
+                c.fillRect(34 + i * 7, 24, 3, 3);
+                c.fillRect(375 + i * 7, 24, 3, 3);
+              }
+              let size =
+                show.kind === "tilt" ? 72 : show.kind === "multiball" ? 62 : 54;
+              c.font =
+                "italic 900 " + size + "px Impact, Arial Black, sans-serif";
+              size *= Math.min(1, 378 / c.measureText(show.title).width);
+              c.font =
+                "italic 900 " + size + "px Impact, Arial Black, sans-serif";
+              c.lineJoin = "round";
+              c.lineWidth = 7;
+              c.strokeStyle = "#020508";
+              c.shadowColor = color + "a0";
+              c.shadowBlur = 14;
+              c.strokeText(show.title, 220, 83);
+              c.shadowBlur = 0;
+              const ink = c.createLinearGradient(0, 37, 0, 88);
+              ink.addColorStop(0, "#ffffff");
+              ink.addColorStop(0.45, "#ffffee");
+              ink.addColorStop(0.48, color);
+              ink.addColorStop(1, color);
+              c.fillStyle = "#020508";
+              c.fillText(show.title, 223, 87);
+              c.fillStyle = ink;
+              c.fillText(show.title, 220, 83);
+              c.font = "bold 10px monospace";
+              c.fillStyle = "#e3e9d8";
+              c.fillText(show.detail, 220, 105, 374);
+              // Static scanlines are baked once, never re-created during animation.
+              c.fillStyle = "#00000018";
+              for (let y = 39; y < 88; y += 4) c.fillRect(28, y, 384, 1);
+              if (show.kind === "tilt") {
+                c.fillStyle = color;
+                for (let i = 0; i < 17; i++)
+                  c.fillRect(30 + i * 23, 115, 13, 3);
+              }
+            },
+            0,
+            0,
+            440,
+            132,
+          );
+        }
+        function drawCallout() {
+          const show = state.callout;
+          if (!show || state.mode !== "playing" || show.until <= state.time)
+            return;
+          const key = show.kind + "|" + show.title + "|" + show.detail;
+          if (renderCache.calloutKey !== key || !renderCache.callout) {
+            renderCache.callout = buildCalloutSprite(show);
+            renderCache.calloutKey = key;
+            renderCache.calloutBuilds++;
+          }
+          if (!renderCache.sheen && !reduced) {
+            renderCache.sheen = makeRenderLayer(
+              (c) => {
+                const shine = c.createLinearGradient(0, 0, 90, 0);
+                shine.addColorStop(0, "#ffffff00");
+                shine.addColorStop(0.5, "#ffffff65");
+                shine.addColorStop(1, "#ffffff00");
+                c.fillStyle = shine;
+                c.fillRect(0, 0, 90, 120);
+              },
+              0,
+              0,
+              90,
+              120,
+            );
+          }
+          const age = state.time - show.start,
+            remaining = show.until - state.time,
+            enter = clamp(age / 0.22, 0, 1),
+            ease = 1 + 2.70158 * (enter - 1) ** 3 + 1.70158 * (enter - 1) ** 2,
+            scale = reduced ? 1 : 0.8 + 0.2 * ease,
+            alpha = reduced ? 1 : Math.min(1, age / 0.055, remaining / 0.25),
+            color = CALLOUTS[show.kind].color;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.translate(260, 180 + (reduced ? 0 : -18 * (1 - enter)));
+          ctx.scale(scale, scale);
+          if (!reduced && age < 0.38) {
+            const burst = age / 0.38;
+            ctx.save();
+            ctx.globalAlpha *= (1 - burst) * 0.8;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+              for (const side of [-1, 1]) {
+                ctx.moveTo(side * 214, (i - 1) * 32);
+                ctx.lineTo(
+                  side * (228 + 16 * burst),
+                  (i - 1) * (32 + 14 * burst),
+                );
+              }
+            }
+            ctx.stroke();
+            ctx.restore();
+          }
+          ctx.drawImage(renderCache.callout.canvas, -220, -66, 440, 132);
+          if (!reduced && age > 0.12 && age < 0.7) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(-200, -48, 400, 96);
+            ctx.clip();
+            ctx.drawImage(
+              renderCache.sheen.canvas,
+              -300 + ((age - 0.12) / 0.58) * 600,
+              -60,
+              90,
+              120,
+            );
+            ctx.restore();
+          }
+          ctx.fillStyle = color;
+          ctx.globalAlpha *= 0.75;
+          ctx.fillRect(
+            -160,
+            49,
+            (320 * remaining) / CALLOUTS[show.kind].duration,
+            2,
+          );
+          ctx.restore();
+        }
+        function scorePopupSprite(f) {
+          const key = f.color + f.text;
+          if (renderCache.popups.has(key)) return renderCache.popups.get(key);
+          const size = f.text.startsWith("+") ? 25 : 19;
+          ctx.save();
+          ctx.font = "italic 900 " + size + "px Arial";
+          const width = Math.min(
+            290,
+            Math.ceil(ctx.measureText(f.text).width) + 24,
+          );
+          ctx.restore();
+          const sprite = makeRenderLayer(
+            (c) => {
+              c.font = "italic 900 " + size + "px Arial";
+              c.textAlign = "center";
+              c.lineWidth = 5;
+              c.lineJoin = "round";
+              c.strokeStyle = "#040808";
+              c.shadowBlur = 7;
+              c.shadowColor = f.color;
+              c.strokeText(f.text, width / 2, 30, width - 18);
+              c.shadowBlur = 0;
+              c.fillStyle = f.color;
+              c.fillText(f.text, width / 2 + 1, 32, width - 18);
+              c.fillStyle = "#ffffef";
+              c.fillText(f.text, width / 2, 30, width - 18);
+            },
+            0,
+            0,
+            width,
+            44,
+          );
+          if (renderCache.popups.size >= RENDERING.popupLimit)
+            renderCache.popups.delete(renderCache.popups.keys().next().value);
+          renderCache.popups.set(key, sprite);
+          return sprite;
+        }
         function drawEffects() {
           for (const p of state.particles) {
             ctx.globalAlpha = clamp(p.life * 3, 0, 1);
@@ -3352,15 +3908,25 @@
           }
           ctx.globalAlpha = 1;
           for (const f of state.floaters) {
-            ctx.globalAlpha = Math.min(1, f.life * 2);
-            text(ctx, f.text, f.x, f.y, 15, f.color, "900");
+            const sprite = scorePopupSprite(f),
+              age = f.total - f.life,
+              pop = reduced ? 1 : 1 + 0.25 * Math.max(0, 1 - age / 0.2),
+              x = clamp(f.x, sprite.width / 2 + 10, W - sprite.width / 2 - 10);
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, f.life * 3);
+            ctx.translate(x, f.y - 16);
+            ctx.scale(pop, pop);
+            ctx.drawImage(
+              sprite.canvas,
+              -sprite.width / 2,
+              -22,
+              sprite.width,
+              44,
+            );
+            ctx.restore();
           }
           ctx.globalAlpha = 1;
-          if (state.messageUntil > state.time && state.mode === "playing") {
-            ctx.fillStyle = "#0c130ce6";
-            ctx.fillRect(106, 216, 300, 24);
-            text(ctx, state.message, 256, 232, 9, C.acid);
-          }
+          drawCallout();
         }
         let fittedH = 0;
         // Use the visible viewport: mobile browser bars can shrink it without changing the screen.
@@ -3495,6 +4061,14 @@
             coordinates: "origin top-left, x right, y down; table 520x820",
             mode: state.mode,
             fpsVisible,
+            shooterGate: {
+              angle: number(shooterGate.angle),
+              passes: shooterGate.passes,
+            },
+            nudge: {
+              strength: number(state.nudge),
+              offsetY: number(nudgeOffsetY()),
+            },
             score: state.score,
             best,
             multiplier: state.mult,
@@ -3521,6 +4095,14 @@
             ramp: { mouth: [366, 442, 417, 480], hits: state.rampHits },
             bumpers: bumpers.map((o) => ({ x: o.x, y: o.y, r: o.r })),
             message: state.message,
+            callout:
+              state.callout && state.callout.until > state.time
+                ? {
+                    kind: state.callout.kind,
+                    title: state.callout.title,
+                    remaining: number(state.callout.until - state.time),
+                  }
+                : null,
             viewport: {
               width: innerWidth,
               height: innerHeight,
@@ -3555,6 +4137,18 @@
           input[side] = on;
         }
         const keyboardFlippers = { left: new Set(), right: new Set() };
+        const touchFlippers = { left: new Set(), right: new Set() };
+        function refreshFlipper(side) {
+          flip(
+            side,
+            keyboardFlippers[side].size > 0 || touchFlippers[side].size > 0,
+          );
+        }
+        function touchFlipper(side, pointerId, held) {
+          if (held) touchFlippers[side].add(pointerId);
+          else touchFlippers[side].delete(pointerId);
+          refreshFlipper(side);
+        }
         const flipperKeySides = Object.freeze({
           ArrowLeft: "left",
           KeyA: "left",
@@ -3583,7 +4177,7 @@
           const side = flipperKeySides[e.code];
           if (side) {
             keyboardFlippers[side].add(e.code);
-            flip(side, true);
+            refreshFlipper(side);
           }
           if (e.repeat) return;
           if (e.code === "Space" || e.code === "ArrowDown") chargeStart();
@@ -3601,7 +4195,7 @@
           const side = flipperKeySides[e.code];
           if (side) {
             keyboardFlippers[side].delete(e.code);
-            flip(side, keyboardFlippers[side].size > 0);
+            refreshFlipper(side);
           }
           if (e.code === "Space" || e.code === "ArrowDown") launch();
         }
@@ -3609,6 +4203,9 @@
         window.addEventListener("blur", () => {
           keyboardFlippers.left.clear();
           keyboardFlippers.right.clear();
+          touchFlippers.left.clear();
+          touchFlippers.right.clear();
+          pointers.clear();
           input.left = input.right = false;
           state.charging = false;
           state.charge = 0;
@@ -3620,48 +4217,82 @@
         const pointers = new Map();
         canvas.addEventListener("pointerdown", (e) => {
           e.preventDefault();
+          if (state.mode !== "playing") return;
           canvas.setPointerCapture(e.pointerId);
           const r = canvas.getBoundingClientRect(),
             x = ((e.clientX - r.left) / r.width) * W,
             y = ((e.clientY - r.top) / r.height) * H,
             action =
               x > 450 && y > 500 ? "launch" : x < W / 2 ? "left" : "right";
-          pointers.set(e.pointerId, action);
+          pointers.set(e.pointerId, {
+            action,
+            x: e.clientX,
+            y: e.clientY,
+            time: e.timeStamp,
+            nudged: false,
+          });
           if (action === "launch") chargeStart();
-          else flip(action, true);
+          else touchFlipper(action, e.pointerId, true);
+        });
+        canvas.addEventListener("pointermove", (e) => {
+          const pointer = pointers.get(e.pointerId);
+          if (!pointer || pointer.nudged || pointer.action === "launch") return;
+          if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+          const up = pointer.y - e.clientY,
+            across = Math.abs(pointer.x - e.clientX);
+          // CSS pixels keep the gesture consistent across viewport sizes.
+          if (
+            up >= 36 &&
+            up > across * 1.5 &&
+            e.timeStamp - pointer.time <= 450
+          ) {
+            e.preventDefault();
+            pointer.nudged = true;
+            nudge();
+          }
         });
         function release(e) {
-          const action = pointers.get(e.pointerId);
+          const pointer = pointers.get(e.pointerId);
+          if (!pointer) return;
+          const { action } = pointer;
           pointers.delete(e.pointerId);
-          if (action === "launch") launch();
-          else if (action && !Array.from(pointers.values()).includes(action))
-            flip(action, false);
+          if (action === "launch") {
+            if (e.type === "pointerup") launch();
+            else {
+              state.charging = false;
+              state.charge = 0;
+            }
+          } else touchFlipper(action, e.pointerId, false);
         }
         canvas.addEventListener("pointerup", release);
         canvas.addEventListener("pointercancel", release);
+        canvas.addEventListener("lostpointercapture", release);
         function bindTouch(id, down, up) {
-          const b = $(id);
+          const b = $(id),
+            held = new Set();
           b.addEventListener("pointerdown", (e) => {
             e.preventDefault();
             b.setPointerCapture(e.pointerId);
+            held.add(e.pointerId);
             b.classList.add("active");
-            down();
+            down(e);
           });
           for (const ev of ["pointerup", "pointercancel", "lostpointercapture"])
-            b.addEventListener(ev, () => {
-              b.classList.remove("active");
-              up();
+            b.addEventListener(ev, (e) => {
+              if (!held.delete(e.pointerId)) return;
+              b.classList.toggle("active", held.size > 0);
+              up(e);
             });
         }
         bindTouch(
           "left-touch",
-          () => flip("left", true),
-          () => flip("left", false),
+          (e) => touchFlipper("left", e.pointerId, true),
+          (e) => touchFlipper("left", e.pointerId, false),
         );
         bindTouch(
           "right-touch",
-          () => flip("right", true),
-          () => flip("right", false),
+          (e) => touchFlipper("right", e.pointerId, true),
+          (e) => touchFlipper("right", e.pointerId, false),
         );
         bindTouch("launch-touch", chargeStart, launch);
         $("start-btn").onclick = () =>
@@ -3710,8 +4341,8 @@
           musicEls = {},
           musicButtons = [...document.querySelectorAll(".ghetto-sound")];
         const musicPulses = {
-          song: "00fffb864322211111100000000000000000000000000000b8643dfea754321111ffd975322111000000000000000000005d9754ffea754321111000000000000000000000000000000001fb864fffc965322111ffea75432111100000000000001100003ea754efed975322111100000000000000000000000000000000d9753cffc864322111fffb86432211100000000000000000000fb854cffb864322111000000000000010000000000000000000ea754bffc965322111fffc8643221110000000000000111100000000affbea8877776655544322211110000000000000000001ffb864ea9653221110000000000000000000000000000032111100008ffea75432111100000000000010000000000000000001fffb85ffc8643221119ffb8643221110000003abc9a8977a785886655aa7543211121110111100000000000000000000000000fea754eba754321111000000000000000000000000000000000000000fffb86432211100000000000000000000000000021110000000000000000000075432111111000000001100100000000000000ffdc96565444444332222222211110000000000000000dfc864cfb864322111000000000000000000000000000000000011000fffb86432211100000000000000000000000000000000dfea75dffb854321111ffda7543211110000000000000000000000000dffc96555454444332222221111000000000000000000afda759fb864322111000000000000000000000111110000000000000111000111111111110000001111100000000000000000bffb868ffb864321111dfd975322111000000036787666466567544547da7543222222222222122111100000000000000000003fea754fb8643221110000000000000000000000000000000000000007ffd975322111000000000000000000000000002111102ffd975ffb8643221119ffb85432111100000000000000000000000002ffea75555545444332222222111100000000000000000ffb864fdb864322111000000000000000000000000000000000000000ffea75432111100000000000000000000000000000000ffea75ffd9754321113ffc86432211100000000000024321111000000ffc975444444544322222233322111000000000000000deb864ceb864321111000000000000000000000000000211100121110fffb86432211100000000000000111000000002211100efea75cfd9653221110eeb85432111100000000000001221110000000dfdb864433344333322345444432211100010111100009ea7549c9753221110000000000000000000000000000000000011110cfda75432111100000000000222111000000000222111affb869ec8643221110adb864322111000000048988975756655446547a96432211111211111111110100000000000000111004fb8644da7543211110000000000000000000000000000000000000006feb864322111110000111000000000001221110000003ffb864ed97532211108fd975432111000000000000001111000000004ffb864445544444443222333221110000000000000000fc9653dc9653221110000000000000000000000000000000000000000feb864334444433323333222211110000000000000000eda754cc9753221110000000000000000000000000000111000110000feb964322111000000000000000000000000000000000ffc965dfb8643221110fda85432111100000000000000000000000000efca75433333332232222222221110000000000000000bfb8549ca754321111000000000000000000000121111100000000000221111111212343221110000001000000000000000000dfea75bfb8643221110eea754321111000000046766656665556555549b96432333233222321122223221110000000000000007fb8645c9653221110000000000000000000000000000000000000000afda754321110000000000000011100000000021211106fea756fb8643221110beb864322111000000000000000000000000007fea754565555433322333223321111000000000000003fd9653fb8643221110000000000000000001000000000000001111102feb864322111000000000000000000000000000000000000000000000024321111000002221111000000322111211100043212ffb854665565543333333332221110001100011110000ec9643db8643221110000000000000000000011100001111100000001ffa854321111000000000001121110000110011111002dea854eda7543211100fc864322111000000000000000322111111110ffb864555545543443332222222111000000000011100bd9753ab8643221110000000000000000000000000000111000111100dfc965322111002211111111100000000000000321111cfea75afb9653221110ffb85432111100000006b8a8869a77577875554643221112222322222222212221110000000000000004964322c965322111003da75432111000000000db8a888a786788675658643221121222223222211122211100000000000000029753229653221110000ea75432111100000000cd98778997687875656643221111122322112121121111000000000000000001c864328864322111000ea75432111100011100baa9a7baa7779966756532211100000000000000000000000000000000000000100000000000000000078643221111111100001111111110000100000ffca75556655444444433444432111100101110000000eea754ec9653221110000000000000000000000000000110000111110ffb864322111000000000000000000000000000000000ffd975ffc8643221110fea75432111100000000000000000000000001ffc975344444443334444433322111000000000000000cea754aea754321111000000000000000000000112111000000100000111100000100111100000000011100000000000000000effd97dfdb864322111ffc97532211100000006fdbc9c9a7877b867578c86432345433323233222323321111000001111000005fb8646db864322111000000000000000000000000000000000000000affb864322111000000000000011000000000000000008ffd978fda754321111bfda7543211110000002efbdaca768776786868b96432244454432333333444321111000100111100101dc9653da7543211110000000000000000000000000000000000000000ffc964322111000000000000011110000000000000000fffb86ffd9753221114ffc96532211100000000000000322111000000ffdc96678888865656666555543211112222222211223cea754da7543211111211111111211211100000111121111112212112dea754321111000000000000000000000000000000000ffea85ffc9643221111ffb8643221110000000fddcb898979799875653221110000000000000000000000000000",
-          loop: "148675644433232212111100001100000000000533332122211221221111111122111110000011100000000001111111110001110000000000000000000000111000000000000000000000001100000000001100000000000221110264444443433333322221322111111211100100000000000000000000232222211111133211111110101111111111111111011100000001100000000000000000000000000000000004321110000000000000000000111100000000effffffdecc9cffb878bfb8989c975657654336fc864322223211212111100000000000000009ffea85433444665432323533532232233221110000000000000000000ddab9befea8876765655546443434332211102111111cfca7665564644333332224332fb86432211100000000ffd9753221110bc9779ffba7565545555454543232122111000000000ffc976756554533343322232211112111211100000000000000000000cfbacaefeb86665756564645434343432111100000008ffc8655554555333232fa9676fc96532232113211111dfb8643324322a75546fca85434343434343221322122111000000000ffca76576655544545443333222122211100000000000000000000000bfb9a9cffba7866666643646443232432111100000006ffb8667575654545453323222ea85432111100000000ffd9753221110eaa989ffca7554756544444334343221110000000000ffed977576756454433322222111000100000000000000000000000009fc988ffedb875889765546557fdb9653221111132227fd9755433443645353432122211100000000000000000000000000000000000fffeaa9a8a9886778775766554321122211221fec976766756565646443443433222111111111110000000000000000dfcaa9ffeb8756666655445454434343221112111111bfba7665556554444433232333fb86445455654321124fc97754344545435343eb864434455432243343334332211100000000fea864455554434344443333232221111111211100000000000000000fcbcbbffdb8668776756556764544343211111111111dfc96767686654536458966669c965344433432111125fb97643323247975434eb864333334332223323232221110011101116fca766566655435443323232322112122221111000000000000000000fbb998ffc97778887664454754454443211121213212fda8655445443435433243334cb86432344443221112bdb8754444454545545cc864322324332222222243322111000000021ffcc98776656644345543344343221122111221110000000000000000bea75643221110000000000002211100000000000000322111111000000000022111021111000000002111103321111000000000000fffffdceddecc9878887868686432214354555bfcb866656556434555444464543243433434322111001111100000003fb8648fdc97657576755475653646453221112132328fba7754465454435443324337fca7543235454321114fd97532211101fb8646fd975545464645435364545343211113232439fba854454656433535334444433232434334543211121222121110002fb8657feb97756775643336464547554321112132328fbb96554454753221110000000000000000000000000000000000000000000ffffffecdbebd998a8a7777869643225453444afba766766564643557555756533243322353643221111011111000007fb864bfcb8766575654457554435454321112132432dfba7545465644365543434349ea85434343332211117fb86432211107c8643aeb86646575754336465545453221113232432eec9766556554646565535537533546544444432211121222222111109ea754feba875567666435556cb85432111122345564fdc875433566432211100000000000000000000000003221114321114322119fffffeccdbbb99899996898896532346587979fba76555656544466755564564325364435643221124343645322322bd9753dfb97534455553355554354575322132435664eea7544346555434444345565ca86432111100000001fec9754334364353544fcb85444656653354454555443221134354648fb976445566644545555756654332645455322111014344554323343b965432211100000000000000110000000000000000211100021110000000011100023211110000003211115322111543211322111ffffffdbccccba9ba988688886432255446675feb975545756445766555564754455644556432211227555464335322fb8645ea87543355555344665436665322123545564bc986554445453356643355649b87533244454322124cd97532212334322111fb987544555543455554555564321134455548cb875677777654557554566644343654547664322113554656454553ba7543cb9754322233232434486432211100000000000000000000000000001000003221110000000321111653221110000000000",
+          song: "01bcc9eefd8cabcbdcec9cab544566666bdffedaaa9976654434333333232242111212226521111111111111111111111112421101111111011111111000011114100000124210000000000006fd9fefda9898dfffb89795534444444efed98788875545454443222222254211122111111113111111111111150000000541111000011000110011110010233100000005310100000220001ff9ffeea8888cffeb96867533333433cfeed9867774554444443223232235211111111111111111111222111111110110442000000131000010011111010113100000005410100000210000cdbefeda88669ffdb87565642222222affea87655544344443332222111263211111123211111005432232232311111111222122222221111111122222222222211111136211111114511111118ffea977676666666666531122112ffeb9756555344434556211111115422211111110111111fffd732211122353221641211110023323222444211112356211122346422111100000005dd8ffec976678765655556531222223ffed9775867654333433221222225542111122211100111dffe942211111110114552211100242010021133211111111111112236511011123510002dc6fffb986767656565655532121111cfec9876565544333346421111113531111111111000111affe952221112244122442121110013333222352411011344311112345532111100000001ee8ffeeb89797785656565641112232affc67867776745444443222222236422111112110101218ffeb64211001010022453211100121100011011111111111111111144410111111110000133efed9989797775756566433222228ffeb7977566664444333223333456421111111144111121feeb64211233110000263100000115623321000004111232263111235632111000010000afabfffa99797a786656755331222224feec7676676755445443242232325422321122311111110fffe842110022122220433111222136201332001003101100322232226313111122200007ea9ffec897879767575665533222232ffeb6767567664433455322222226621111222100001101efed964443252112001554210220015410233100221001100122322105432111122310003ec7ffeb889797867667576642322222ffff956675a974434345322222433542111223410000110affe953210111012310443121111003222310001123433334222224325421222223411122cb6fedca88777675767666642111121bffdb6465655685555655232222237421111111111111119fffd54421112344322464110110002222222343411011245311113335652111110000001efbffffcb9a89886665656652112223afffd9677978755454533222222327421111123210111112fffd86321111111022464221000033100011111210011111111112234620011112330000afbcfffdab9a98888797866531222214ffffc769795766655564433233335421112212221111111ffff963211211222111641000000011000000000010000111000000026310000002300007fc9ffffbbaaa7978888776631122222ffffc9788775756455543333232355211121222111111114433332122231111111142222222232222222222222222222222222226311222222332224fd9ffffcbbbaa9a8a89887632222222dfffd898a88777766756555544335631112222222221111afffc86311111111111552100010011000000001000001001100000015421000000100001ffaffffdbab8b8aaa99979531223232bfffeb8a8a78687666655454544336311122122211110117fffe96411111111111452100000001000000001000000001100000003521000000000000ffb9ffdba9b9a99b8989795321112236fffdc9aaaa8987565554544355424321122211110111112fffd96422344211110153311010000212231123211112334421001003432111110000000dfd8fffdaaabab9b8998976433323432fffdbb9a9c9a87676666655444434422111111110111112fffea74311242111122432110022334223323323311120000131123215321111111110008fe8fffb9aabcab998a8986422222333effedc9a9a9a78889676666545654521111111111111112afffa64333332112200442111112210000000000311222100012112235332100110000004fe8fffda9babaaa8979896443223332cfffc9aaab9b886766867464555545221111222111111115fffd86333210112100352211022233223321233443333333333333444422223324331222fe9effeb9aa9a898999988432222323bfffd9777665454444374212222125311011111100001116fffd75411111344322342111110001112221342110011125211111123441111110000001fdedfffd886868666565646421122227fffd8767586655554453323223235411111112111101113ffffa7521110011022353110000034100011112111111211110112334521011112440000dddbfffea999a8a8a9a9996421122223ffffc988887666666555443333225421111111211111111ffffb8631121112111054100000101000000000000001011100000001531000000351000adfbfffeb9a999797a79796521122222ffffba788877777666553433333244211111112211111113744332322221111111153333223323223222212322222223322222225322222233333338fecffffcbbbcbbacadaba9621123334fffffccacab9b9baaa89786655545521112222222211122cffff97521111111111442100000000000000000000000000000000005420000000000004fedffffdbb9cababbbbac9732122334dfffecbbcbacac9b9a997766655445311122222222222228ffffa8531101110000352100000011000000000000000111000000004421000000000001feffffffffffdfcfdfdeecfcfcfefeeecebecddcccf621000000000000000000000000000000000000000000000000000000000000000000000000",
+          loop: "00adde978a9a9a9998888754233434443334333ac6aedd822222addc72111143111111111111112a96dedd611111ceed611111530111010111000010101111000002d9cbbbbaa95779cabac949bbbbaca8cefc9a9a998a8a79888552334344443443336ca7defb421117defc51111352011111111111119ca9dffc411111111111111441100111011101011111111001bc7adef89ab9a656788899856bab9aab9cedf99a9aa8a9a89898854234444444454434cb7cdfe821111deff72111153111111111111113db7cefe7210001101101112530000000000000001000000000015ffbaabaa9846377797984dabcbcfaaedfd767676767675656552223333332323229a9beffe62111afffd5210154211111111111111b83ceffc41111ceffc41111551100011101011001000110011100000000000164110000000000000003feffa99b9c8b9bab9ba864447676777667578ca8feff753447eefe63434452123343433333339999effe732222222222222552111111212222222222111111111bdffc4211154110111110accbbccb7dcffe9aaabab9babab9a55255766767676756a76eeffa44344feff94333453112233333333335898ffff732222222222222442111121211121217c9aeffd621119eedfa9bbc856799bb9a5bac98cbb9eddfc89aabaa9c9c8b8a65346676767666565987cdffb54443eeffa4443342112333333333325c65eeffa322222222232224531111111111111111111111111117eeff82111442100000007abbccbdabedfdaa9a9b9999baba955334447565665555d88cfefe73322ceefd7223254112222223222324d84deffb42113ddffa4211254110111111111118d87eeff931006efff83100453100000000000000008eeffabccbc9aacacab965344667676767566ca8beefd63323ceffd7333355112232232323233d84ddffc632222222222222641111112111111111111121111115eeffa4111343000000006aacabbaaadcffbb9baaa8a8b9aaa65434576766555564c88adefe73233beefd6222365211112222222222c95ddffd73222222222222264111111111111114c95deffb41114eedfbb9aa766578899997bcbcccdabedfd9ababaa9aa9ca9875334667777665756ba8addfd63233beefd6223355212222233323333d85ddefc622222222222222541011111111121111111111110004eeffa411035310000000699bbcdb9adcffbbbabab8babb9a975435577676767676b98adefd73333bdefd6222265211222232222233c96ddefc62212deffb4211264100111111111117c95eeffc52114eeffb4100464100000000000000008eeffecacacaacadacab75446698989999a99ca7bdeff94444bdffe8433465212234343333334c95edffc632212122222223641111112121221221111111111117deffcaccb66567899ab9acbcbad7bcdeffdadbcbacacaccba65345788a8a8a8a87d94ddffe73445edffd6443463112323333233339a87edffa4222322222222255311111111111212b98adeff82111ceeffbabaa5556aa9ab95cabcccc7cedfffbcbdbdbbcadbca86434769898899999ac98eeffb54449deffa533355311232333332323b88ceefe832221222222221652011111211111211111111111116efffdabcd75557899aaa9cdedbd88aeeffeabcacacbcbcbbb65335798a89899998ca4eeffd74344ddffd6433354112232323233328b88feffb42118dfffa411155311111111111111d98cfffe82111ddffd6211164100000000000000006eeffebcadacbddcdcca8544578a8a8a8a899c97aeeffa5454ceefe9444455311223232333334c94edffd732222222222223641011112111111111211111111119efffc5111543100111115abbbbdc7ddeffeadacbbabbbaba864124668786778879c98efffc65449efffb543455311233333333333da7dffffb3222222222222364111111121112117d97ffffe62118eeffdacda754469ccb9a7dceccdcc7efffeacbcbcbbbbbbaa50000000000000000000000000000000000000000000",
         };
         let themeMode = 0,
           musicTouched = false;
@@ -3836,12 +4467,24 @@
               step: PHYSICS.step,
               launcher: LAUNCHER,
               table: TABLE,
+              shooter: SHOOTER,
+              gate: {
+                x: shooterGate.x,
+                y: shooterGate.y,
+                length: shooterGate.length,
+                rest: shooterGate.rest,
+              },
               rendering: RENDERING,
             }),
             reset() {
               nextBallId = 0;
               physicsRandom.reset();
               resetSession();
+              keyboardFlippers.left.clear();
+              keyboardFlippers.right.clear();
+              touchFlippers.left.clear();
+              touchFlippers.right.clear();
+              pointers.clear();
               state.time = 0;
               state.beat = 0;
               input.left = input.right = false;
@@ -3896,6 +4539,11 @@
                 renderCache.targets,
                 ...renderCache.bumpers.values(),
               ].filter(Boolean);
+              const effects = [
+                renderCache.callout,
+                renderCache.sheen,
+                ...renderCache.popups.values(),
+              ].filter(Boolean);
               return {
                 width: canvas.width,
                 height: canvas.height,
@@ -3904,13 +4552,23 @@
                 frames: renderCache.frames,
                 sprites: renderCache.bumpers.size,
                 layers: layers.length,
-                bytes: layers.reduce(
+                bytes: [...layers, ...effects, renderCache.gate]
+                  .filter(Boolean)
+                  .reduce(
+                    (bytes, layer) =>
+                      bytes + layer.canvas.width * layer.canvas.height * 4,
+                    0,
+                  ),
+                combo: renderCache.insertKey,
+                targets: renderCache.targetKey,
+                effectLayers: effects.length,
+                effectBytes: effects.reduce(
                   (bytes, layer) =>
                     bytes + layer.canvas.width * layer.canvas.height * 4,
                   0,
                 ),
-                combo: renderCache.insertKey,
-                targets: renderCache.targetKey,
+                calloutBuilds: renderCache.calloutBuilds,
+                popupEntries: renderCache.popups.size,
               };
             },
           });

@@ -150,6 +150,9 @@ console.log(
 );
 for (const suite of [
   "smoke",
+  "touch-nudge",
+  "callouts",
+  "shooter-gate",
   "natural-drain",
   "responsive",
   "rendering",

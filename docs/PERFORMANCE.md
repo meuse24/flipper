@@ -1,5 +1,41 @@
 # Performance-Prüfung: 60 FPS auf dem Handy
 
+## Echte Geräte: SM-A536B und S10e, 28. Oktober 2026
+
+Das minimierte Release v20 wurde lokal über ADB-Reverse auf zwei per USB angeschlossenen Samsung-Geräten in Chrome 156 geprüft. Normale Echtzeit-Physik, Musik und Spieleffekte liefen; keine manuelle Simulationsuhr und kein Testadapter. Jeder Lauf dauerte 20 Sekunden, die ersten 120 RAF-Intervalle wurden für die Zeitstatistik verworfen. Automatische Flipper-/Abschuss-Eingaben hielten das Spiel aktiv; Touch, Zwei-Finger-Flipper und Wischgesten wurden davor mit nativen Touch-Ereignissen auf den Geräten geprüft. Screenshots entstanden nach der Messung.
+
+| Gerät                     | Vollbild-Viewport |   FPS | Frame p95 | Frame p99 | Max. aktive Kugeln |
+| ------------------------- | ----------------- | ----: | --------: | --------: | -----------------: |
+| SM-A536B, Hochformat      | 320 × 711         | 59,85 |   16,8 ms |   16,8 ms |                  1 |
+| SM-A536B, Querformat      | 711 × 320         | 59,80 |   16,8 ms |   16,8 ms |                  1 |
+| S10e SM-G970F, Hochformat | 360 × 760         | 59,83 |   16,8 ms |   16,9 ms |                  5 |
+| S10e SM-G970F, Querformat | 760 × 360         | 59,83 |   16,8 ms |   16,8 ms |                  8 |
+
+Die maximale Kugelzahl ist eine beobachtete Spitze, keine durchgehend gehaltene Last. Die SM-A536B-Läufe sind deshalb Einzelkugel-Messungen. Die kurzen RAF-Stichproben sind kein Temperatur-/Akku-Dauertest und kein unabhängiger Compositor-Nachweis.
+
+Auf beiden Geräten bestanden echtes Android-Vollbild, vollständige Sichtbarkeit von Tisch/Touch-Tasten, Abschuss durch die Klappe, Musikwechsel, gleichzeitige Flipper, Wisch-Anstoßen samt sichtbarem Ruck, Tilt/Sperre/Erholung, Pause/Fortsetzen, Offline-Neuladen sowie MP3-Bytebereiche. Offline-Gesang und -Instrumental wurden anschließend auf beiden Geräten geprüft. Keine Spiel-JavaScript-Ausnahmen wurden erfasst. Rohdaten und native Screenshots liegen unter `output/a53-*` und `output/s10e-*`.
+
+Ein echter Layoutbefund auf dem SM-A536B war die Überlappung des dekorativen Header-Untertitels mit der Radio-Beschriftung bei 320 CSS-Pixeln Breite. v21 blendet diesen Untertitel in schmalem Hochformat aus. Die korrigierte Ansicht und der aktive v21-Cache wurden auf beiden Geräten bestätigt; Physik und Rendering entsprechen v20. Eine stockende A53-Debug-Verbindung beim abschließenden Neuladen wurde durch einen neuen dedizierten Test-Tab behoben. Die ursprüngliche automatische Bildschirmdrehung und Rotation wurden auf beiden Geräten wiederhergestellt.
+
+## Abschussklappe in v19 — lokaler Vergleich, 28. Oktober 2026
+
+Der gleiche lokale Browseraufbau wie im folgenden v18-Vergleich wurde mit dem Stand unmittelbar vor und nach dem neuen Schienenbogen erneut geprüft. Beide Varianten erreichten im zehnsekündigen Lauf nach vier Sekunden Warmlauf rund 60,00 RAF-FPS. Die mittlere Renderzeit betrug 0,55 ms vorher und 0,48 ms nachher; Render-p99 lag bei 2,50 beziehungsweise 2,70 ms. Diese Werte gehören zu diesem Vergleich und sind wegen der veränderten Rechnerauslastung nicht als Verbesserung gegenüber den absoluten v18-Zeiten zu lesen. Rohdaten: `output/shooter-benchmark.json`.
+
+Die Bogenschienen sind im bestehenden Hintergrund-Cache enthalten. Ein kleiner zusätzlich gecachter Metall-Sprite wird für die Klappe rotiert; der Lichtimpuls benötigt eine einfache Linie. Auch dieser Vergleich ist eine Desktop-Browsermessung mit mobilem Viewport, kein neuer Test auf dem S10e. Start/Pause nutzen gleichzeitig weniger Abdunklung und schwächere Unschärfe; im Spiel ist das Menü verborgen.
+
+## Tischanzeigen in v18 — lokaler Browservergleich, 28. Oktober 2026
+
+Die neuen Callouts und Punktzahlen wurden gegen die unmittelbar vorherige Darstellung verglichen: Headless Chromium über Playwright auf diesem Windows-Rechner, mobiles Viewport 390 × 844, DPR 3, gleicher begrenzter Canvas. Drei kontrolliert im Spiel gehaltene Kugeln, drei Wertungen alle sechs Frames und wechselnde Ereignismeldungen alle 90 Frames. Je zehn Sekunden, davon vier Sekunden Warmlauf; beide Varianten im selben Browseraufbau, keine parallelen Prüfläufe. Die Grafikmessung umfasst auch Neuaufbauten beim Wechsel einer Meldung.
+
+| Darstellung                   | RAF-FPS | Renderzeit Mittel | Renderzeit p95 | Renderzeit p99 |
+| ----------------------------- | ------: | ----------------: | -------------: | -------------: |
+| Vorherige Textmeldungen       |   59,84 |           1,32 ms |        1,90 ms |        2,30 ms |
+| Neue Callouts und Punktzahlen |   59,34 |           1,04 ms |        1,40 ms |        5,80 ms |
+
+Die Mittelwerte zeigen hier keinen erhöhten dauerhaften Zeichenaufwand; einzelne neue Banner erzeugen höhere Spitzen. Der zusätzliche Effektspeicher lag in diesem Lauf bei 681.600 Bytes. Rohdaten: `output/callout-benchmark-warm.json`. Das ist ein kurzer lokaler Vergleich, keine neue S10e-Messung oder Zusicherung für andere Geräte; beim Test war kein Android-Gerät angeschlossen. Ein zusätzlicher explorativer Lauf mit vierfacher CPU-Drosselung erreichte bereits mit der alten Darstellung nur rund 10 FPS und eignet sich nicht als Nachweis für die frühere Geräte-Messung.
+
+Schrift, Konturen und Schatten werden pro Inhalt vorgezeichnet. Während der Anzeige bleiben eine Banner-Grafik und ein kleiner Lichtzug; Punktzahl-Grafiken und aktive Floater sind jeweils auf zwölf begrenzt. Cache-Wiederverwendung, Speichergrenzen, Ablaufzeiten, Prioritäten und reduzierte Bewegung werden durch `tests/callouts.mjs` geprüft. Die historischen Messungen darunter bleiben zur Einordnung erhalten.
+
 Stand: 27. Oktober 2026. Historischer Audit: Quellstand `a568f66`, PWA-Cache v11. Integration: Release v12.
 
 Auslieferung v13 ergänzt die Fokusübergabe an den Tisch nach Start/Fortsetzen, damit die Leertaste unmittelbar nach einem Menü-Klick funktioniert. Das Rendering entspricht dem unten gemessenen integrierten Stand.

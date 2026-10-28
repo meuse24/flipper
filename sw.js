@@ -1,5 +1,5 @@
 // Each release is a coherent offline snapshot. Upload assets before this worker.
-const CACHE_NAME = "badboy-pinball-v13";
+const CACHE_NAME = "badboy-pinball-v21";
 const CACHE_PREFIX = "badboy-pinball-";
 const scopedURL = (file) => new URL(file, self.registration.scope).href;
 const GAME_URL = scopedURL("./index.html");

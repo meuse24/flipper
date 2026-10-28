@@ -10,6 +10,43 @@ await withGameBrowser(async ({ newContext, origin }) => {
     const { launcher, step } = test.constants;
     // This captured outlane state used to loop above y=522 for over 60 seconds.
     const scenarios = [
+      // Captured resting pockets between the old guide ends and flipper pivots.
+      // These must empty under gravity, without flipper input or a nudge.
+      {
+        name: "settled left pivot pocket",
+        x: 149.55,
+        y: 693.4,
+        vx: 0,
+        vy: 0,
+        entered: true,
+      },
+      {
+        name: "settled right pivot pocket",
+        x: 365.25,
+        y: 691.6,
+        vx: 0,
+        vy: 0,
+        entered: true,
+      },
+      ...[140, 145, 150, 155, 360, 365, 370, 375].map((x) => ({
+        name: `slow pivot approach x=${x}`,
+        x,
+        y: 685,
+        vx: 0,
+        vy: 0,
+        entered: true,
+      })),
+      // Near-zero-speed drops also catch a small uphill lip at the pivot.
+      ...[
+        157, 158, 159, 160, 161, 162, 163, 353, 354, 355, 356, 357, 358, 359,
+      ].map((x) => ({
+        name: `pivot lip drop x=${x}`,
+        x,
+        y: 680,
+        vx: 0,
+        vy: 0,
+        entered: true,
+      })),
       {
         name: "captured right-outlane orbit",
         x: 438,

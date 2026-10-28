@@ -29,14 +29,14 @@ assets/lucky-seven-theme.mp3
 
 Den Inhalt direkt im Spielverzeichnis des Webservers bereitstellen, beispielsweise `/apps/flipper/`. Der Ordnername `release` gehört nicht in die öffentliche URL. `output/release-report.json` enthält Größen und SHA-256-Hashes von Quellen und Auslieferungsdateien. `release/`, `output/` und `ftp.txt` sind von Git ausgeschlossen. Unbekannte Dateien im Release-Ordner lassen den Build abbrechen; sie werden weder gelöscht noch hochgeladen.
 
-Die Release-Prüfung vergleicht reproduzierbare Builds, Dateiliste und Hashes, außerdem Start-/Spielansichten und Spielzustände mit der Quelle in drei Ausrichtungen. Der Bildvergleich toleriert Rundungen von höchstens einer Farbstufe an maximal zehn Pixeln pro Ansicht; Spielzustände müssen exakt übereinstimmen. Anschließend laufen Gameplay, alle 22 Drain-Szenarien, neun Viewportgrößen, Offline-Audio sowie Installation und bestätigte Worker-Updates gegen die minimierten Dateien.
+Die Release-Prüfung vergleicht reproduzierbare Builds, Dateiliste und Hashes, außerdem Start-/Spielansichten und Spielzustände mit der Quelle in drei Ausrichtungen. Der Bildvergleich toleriert Rundungen von höchstens einer Farbstufe an maximal zehn Pixeln pro Ansicht; Spielzustände müssen exakt übereinstimmen. Anschließend laufen Gameplay, Touch-Anstoßen, priorisierte Tischanzeigen, 21 Abschussstärken mit Einwegklappe, alle 46 Drain-Szenarien, neun Viewportgrößen, Rendering-Budgets, Startverhalten, Offline-Audio sowie Installation und bestätigte Worker-Updates gegen die minimierten Dateien.
 
-Die Medien bleiben unverändert; sie machen fast die gesamte Paketgröße aus. Die Minifizierung reduziert den Code, ohne die Bild- oder Audioqualität zu verändern.
+Der Build verändert die Medien nicht; sie machen fast die gesamte Paketgröße aus. Die Minifizierung reduziert den Code, ohne die Bild- oder Audioqualität zu verändern. Die beiden BADBOY-Tracks werden bereits als platzsparende Mono-MP3s bereitgestellt.
 
 Optional unter PowerShell als ZIP verpacken:
 
 ```powershell
-Compress-Archive -Path release/* -DestinationPath output/badboy-pinball-v13.zip -Force
+Compress-Archive -Path release/* -DestinationPath output/badboy-pinball-v21.zip -Force
 ```
 
 ## FTPS-Upload
@@ -61,7 +61,13 @@ Der Probelauf kontrolliert Build-Hashes, aktuelle Quellen und den veröffentlich
 
 Nur die gemeinsame Allowlist in `scripts/release-files.mjs` wird übertragen. Medien und weitere Voraussetzungen werden zuerst hochgeladen und jeweils per HTTPS/SHA-256 bestätigt; danach HTML, zuletzt der Service Worker. Fehler stoppen den Upload. Bestehende andere Serverdateien bleiben erhalten. Der Build selbst öffnet keine Netzwerkverbindung.
 
-## Release v13
+## Release v21
+
+Cache `badboy-pinball-v21` bündelt die BADBOY-Gesangs-/Instrumentaltracks als Mono-MP3, Bassanimation passend zu beiden Songs, bereinigte Flipper-Drehpunkte ohne Kugelfallen, Touch-Anstoßen mit sichtbarem Ruck und Tilt, größere Menü-Embleme, transparentere Start-/Pausenmenüs, priorisierte Arcade-Tischanzeigen und die echte Abschussbahn mit beweglicher Einwegklappe. Die Pfeiltasten bleiben als Paar zusammen; bei schmalem Hochformat entfällt der dekorative Header-Untertitel, damit er nicht mit dem Radio kollidiert.
+
+Die native Prüfung auf Samsung SM-A536B und S10e SM-G970F bestätigt Touch, Vollbild, Hoch-/Querformat, Klappe, Musik und Offlinebetrieb. Die gemessenen kurzen Spielläufe lagen jeweils bei rund 59,8 FPS; Details und Messgrenzen stehen in [PERFORMANCE.md](PERFORMANCE.md). Der v21-Header wurde auf beiden Geräten nachgeprüft.
+
+## Früheres Release v13
 
 Cache `badboy-pinball-v13` enthält die mobile Rendering-Optimierung, das größere Spielfeld ohne obere/untere Zierrahmen, die Shift-Steuerung, Übersetzungshinweise und Vollbild/Gesang beim ersten Klick. Gegenüber dem ersten Upload v12 wird nach Start und Fortsetzen auch der Tastaturfokus aus dem versteckten Menü auf den Tisch gesetzt, damit die Leertaste sofort lädt. Die unveränderte 240-Hz-Physik wird mit denselben 22 Drain-Szenarien geprüft. Die Release-Suite führt zusätzlich `tests/rendering.mjs` und `tests/startup.mjs` gegen die minimierten Dateien aus. Details und echte S10e-Messungen: [PERFORMANCE.md](PERFORMANCE.md).
 
